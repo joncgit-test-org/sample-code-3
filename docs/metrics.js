@@ -261,37 +261,31 @@ function renderCurrentFixes() {
   issues.slice(0, 3).forEach(issue => {
     const card = document.createElement('div');
     card.className = 'stat-card';
-
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tooltip';
-    tooltip.textContent = 'Open [AI First Parity] fix issue and how long it has been open.';
-    card.appendChild(tooltip);
+    card.title = `${issue.title} • Open for ${issue.ageDays.toFixed(1)} days`;
 
     const label = document.createElement('div');
     label.className = 'stat-label';
     label.textContent = `Fix Issue #${issue.issueNumber}`;
-    card.appendChild(label);
 
     const value = document.createElement('div');
     value.className = 'stat-value';
     value.textContent = issue.language || 'unknown';
-    card.appendChild(value);
 
-    const sub = document.createElement('div');
-    sub.className = 'stat-sub';
-    const age = issue.ageDays != null ? issue.ageDays.toFixed(1) : 'N/A';
+    const meta = document.createElement('div');
+    meta.className = 'stat-meta';
     const link = document.createElement('a');
     link.href = issue.url;
-    link.textContent = issue.title;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
-    link.style.color = '#60a5fa';
-    link.style.textDecoration = 'none';
+    link.textContent = issue.title;
 
-    sub.textContent = `Open for ${age} days • `;
-    sub.appendChild(link);
-    card.appendChild(sub);
+    const age = issue.ageDays != null ? issue.ageDays.toFixed(1) : 'N/A';
+    meta.textContent = `Open for ${age} days • `;
+    meta.appendChild(link);
 
+    card.appendChild(label);
+    card.appendChild(value);
+    card.appendChild(meta);
     grid.appendChild(card);
   });
 
