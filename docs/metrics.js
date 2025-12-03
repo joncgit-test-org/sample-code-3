@@ -255,36 +255,47 @@ function renderCurrentFixes() {
     return;
   }
 
-  const list = document.createElement('ul');
-  list.style.listStyle = 'none';
-  list.style.padding = '0';
-  list.style.margin = '0';
+  const grid = document.createElement('div');
+  grid.className = 'stats-grid';
 
-  issues.forEach(issue => {
-    const li = document.createElement('li');
-    li.style.marginBottom = '0.4rem';
+  issues.slice(0, 3).forEach(issue => {
+    const card = document.createElement('div');
+    card.className = 'stat-card';
 
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip';
+    tooltip.textContent = 'Open [AI First Parity] fix issue and how long it has been open.';
+    card.appendChild(tooltip);
+
+    const label = document.createElement('div');
+    label.className = 'stat-label';
+    label.textContent = `Fix Issue #${issue.issueNumber}`;
+    card.appendChild(label);
+
+    const value = document.createElement('div');
+    value.className = 'stat-value';
+    value.textContent = issue.language || 'unknown';
+    card.appendChild(value);
+
+    const sub = document.createElement('div');
+    sub.className = 'stat-sub';
+    const age = issue.ageDays != null ? issue.ageDays.toFixed(1) : 'N/A';
     const link = document.createElement('a');
     link.href = issue.url;
-    link.textContent = `#${issue.issueNumber} ${issue.title}`;
+    link.textContent = issue.title;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.style.color = '#60a5fa';
     link.style.textDecoration = 'none';
 
-    const meta = document.createElement('div');
-    meta.style.fontSize = '0.8rem';
-    meta.style.color = '#6b7280';
-    const lang = issue.language || 'unknown';
-    const age = issue.ageDays != null ? issue.ageDays.toFixed(1) : 'N/A';
-    meta.textContent = `${lang} • open for ${age} days`;
+    sub.textContent = `Open for ${age} days • `;
+    sub.appendChild(link);
+    card.appendChild(sub);
 
-    li.appendChild(link);
-    li.appendChild(meta);
-    list.appendChild(li);
+    grid.appendChild(card);
   });
 
-  container.appendChild(list);
+  container.appendChild(grid);
 }
 
 function renderAnalysisStats() {
