@@ -287,6 +287,121 @@ function renderCurrentFixes() {
   container.appendChild(list);
 }
 
+function renderAnalysisStats() {
+  const container = document.getElementById('analysis-stats-grid');
+  container.innerHTML = '';
+
+  if (!metrics || !metrics.analysis || !metrics.parityGaps) {
+    container.innerHTML = '<div class="error">No analysis metrics available.</div>';
+    return;
+  }
+
+  const analysis = metrics.analysis;
+  const gaps = metrics.parityGaps;
+
+  const cards = [
+    {
+      label: 'New Gaps Identified',
+      value: gaps.newGapsIdentified ?? 0,
+      tooltip: 'Number of new parity gaps identified since the previous task list snapshot.'
+    },
+    {
+      label: 'Time Since Last Analysis',
+      value: (analysis.timeSinceLastAnalysisDays ?? 0).toFixed(1) + ' days',
+      tooltip: 'Elapsed time in days since the most recent parity analysis issue was created.',
+      link: analysis.lastAnalysis?.url || null,
+      linkLabel: analysis.lastAnalysis ? `Issue #${analysis.lastAnalysis.issueNumber}` : null
+    },
+    {
+      label: 'Current Open Fixes',
+      value: gaps.openFixIssuesCount ?? (gaps.openFixIssues?.length ?? 0),
+      tooltip: 'Number of currently open [AI First Parity] fix issues.'
+    }
+  ];
+
+  cards.forEach(card => {
+    const el = document.createElement('div');
+    el.className = 'stat-card';
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip';
+    tooltip.textContent = card.tooltip;
+    el.appendChild(tooltip);
+
+    const label = document.createElement('div');
+    label.className = 'stat-label';
+    label.textContent = card.label;
+    el.appendChild(label);
+
+    const value = document.createElement('div');
+    value.className = 'stat-value';
+    value.textContent = card.value;
+    el.appendChild(value);
+
+    if (card.link && card.linkLabel) {
+      const sub = document.createElement('div');
+      sub.className = 'stat-sub';
+      const a = document.createElement('a');
+      a.href = card.link;
+      a.textContent = card.linkLabel;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.style.color = '#60a5fa';
+      sub.appendChild(a);
+      el.appendChild(sub);
+    }
+
+    container.appendChild(el);
+  });
+}
+
+function renderCurrentFixes() {
+  const container = document.getElementById('current-fixes-list');
+  container.innerHTML = '';
+
+  if (!metrics || !metrics.parityGaps || !Array.isArray(metrics.parityGaps.openFixIssues)) {
+    container.innerHTML = '<div class="error">No open fix issues available.</div>';
+    return;
+  }
+
+  const issues = metrics.parityGaps.openFixIssues;
+  if (issues.length === 0) {
+    container.textContent = 'No open fix issues at the moment.';
+    return;
+  }
+
+  const list = document.createElement('ul');
+  list.style.listStyle = 'none';
+  list.style.padding = '0';
+  list.style.margin = '0';
+
+  issues.forEach(issue => {
+    const li = document.createElement('li');
+    li.style.marginBottom = '0.4rem';
+
+    const link = document.createElement('a');
+    link.href = issue.url;
+    link.textContent = `#${issue.issueNumber} ${issue.title}`;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.style.color = '#60a5fa';
+    link.style.textDecoration = 'none';
+
+    const meta = document.createElement('div');
+    meta.style.fontSize = '0.8rem';
+    meta.style.color = '#6b7280';
+    const lang = issue.language || 'unknown';
+    const age = issue.ageDays != null ? issue.ageDays.toFixed(1) : 'N/A';
+    meta.textContent = `${lang} • open for ${age} days`;
+
+    li.appendChild(link);
+    li.appendChild(meta);
+    list.appendChild(li);
+  });
+
+  container.appendChild(list);
+}
+
 window.addEventListener('load', async () => {
   try {
     metrics = await loadMetrics();
