@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI-Parity Workflow Evaluation Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background: #0b1220;
+      color: #e5e7eb;
+    }
+
+    h1 {
+      margin: 0 0 0.25rem 0;
+      font-size: 1.9rem;
+      color: #f9fafb;
+    }
+
+    h2 {
+      margin-top: 2rem;
+      font-size: 1.4rem;
+      color: #f9fafb;
+    }
+
+    .subtitle {
+      margin: 0 0 1.5rem 0;
+      color: #9ca3af;
+      font-size: 0.95rem;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .segment-control {
+      display: inline-flex;
+      border-radius: 999px;
+      border: 1px solid #374151;
+      overflow: hidden;
+      background: #020617;
+    }
+
+    .segment-control button {
+      border: none;
+      background: transparent;
+      color: #9ca3af;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .segment-control button.active {
+      background: #1d4ed8;
+      color: #f9fafb;
+    }
+
+    .segment-control button + button {
+      border-left: 1px solid #374151;
+    }
+
+    .timestamp {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      position: relative;
+      background: radial-gradient(circle at top left, #1f2937, #020617);
+      border-radius: 0.75rem;
+      padding: 0.9rem 1rem;
+      border: 1px solid #1f2937;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      cursor: default;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      margin-bottom: 0.4rem;
+    }
+
+    .stat-value {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+
+    .stat-sub {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+
+    .stat-card:hover {
+      border-color: #3b82f6;
+    }
+
+    .tooltip {
+      position: absolute;
+      inset: auto auto 100% 0;
+      margin-bottom: 0.4rem;
+      background: #111827;
+      color: #e5e7eb;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid #374151;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(4px);
+      transition: opacity 0.1s ease, transform 0.1s ease;
+      max-width: 240px;
+      z-index: 10;
+    }
+
+    .stat-card:hover .tooltip {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .chart-container {
+      background: #020617;
+      border-radius: 0.75rem;
+      padding: 1rem 1.2rem 1.3rem;
+      border: 1px solid #1f2937;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .chart-title {
+      font-size: 0.95rem;
+      color: #e5e7eb;
+    }
+
+    .chart-subtitle {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 600px;
+      height: 220px;
+      display: block;
+      margin-top: 0.4rem;
+    }
+
+    .error {
+      color: #fecaca;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AI-Parity Workflow Evaluation Dashboard</h1>
+    <p class="subtitle">
+      Real-time evaluation metrics for SDK parity automation powered by GitHub Copilot SWE Agent
+    </p>
+  </header>
+
+  <section aria-labelledby="fix-metrics-heading">
+    <div class="toolbar">
+      <h2 id="fix-metrics-heading">Fix Performance &amp; Statistics</h2>
+      <div>
+        <span style="font-size:0.8rem; color:#6b7280; margin-right:0.6rem;">View metrics for:</span>
+        <div class="segment-control" id="segment-control">
+          <button data-scope="overall" class="active">Overall</button>
+          <button data-scope="python">Python</button>
+          <button data-scope="dotnet">.NET</button>
+          <button data-scope="nodejs">Node.js</button>
+        </div>
+      </div>
+    </div>
+    <div class="timestamp" id="generated-at"></div>
+
+    <div class="stats-grid" id="fix-stats-grid">
+      <!-- Cards populated by metrics.js -->
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Fix PR State Distribution</div>
+          <div class="chart-subtitle" id="chart-scope-label">Overall (last period)</div>
+        </div>
+      </div>
+      <canvas id="fix-state-chart"></canvas>
+      <div class="error" id="chart-error" style="display:none;"></div>
+    </div>
+  </section>
+
+  <script src="metrics.js"></script>
+</body>
+</html>
