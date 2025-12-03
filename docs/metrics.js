@@ -7,6 +7,12 @@ const fixStatsDefinitions = [
     tooltip:
       'Total number of fix pull requests created in the evaluation period.',
   },
+      {
+        key: 'total',
+        label: 'Total Fix PRs',
+        tooltip:
+          'Total number of fix pull requests created in the evaluation period.',
+      },
   {
     key: 'merged',
     label: 'Merged Fix PRs',
@@ -90,50 +96,59 @@ function renderGeneratedAt() {
   el.textContent = `Metrics generated at ${d.toUTCString()}`;
 }
 
-function renderFixStats() {
-  const container = document.getElementById('fix-stats-grid');
-  container.innerHTML = '';
+     function renderDefinitionGroup(containerId, definitions, data) {
+       const container = document.getElementById(containerId);
+       if (!container) return;
+       container.innerHTML = '';
 
-  const scopeData = getScopeFixMetrics(currentScope);
-  if (!scopeData) {
-    container.innerHTML = '<div class="error">No fix metrics available for this scope.</div>';
-    return;
-  }
+       if (!data) {
+         container.innerHTML = '<div class="error">No metrics available for this scope.</div>';
+         return;
+       }
 
-  fixStatsDefinitions.forEach(def => {
-    const raw = scopeData[def.key];
-    if (raw === undefined || raw === null) return;
+       definitions.forEach(def => {
+         const valueSource = def.compute ? def.compute(data) : data[def.key];
+         if (valueSource === undefined || valueSource === null || Number.isNaN(valueSource)) return;
 
-    let displayValue;
-    if (def.format) {
-      displayValue = def.format(raw);
-    } else if (typeof raw === 'number') {
-      displayValue = Number.isInteger(raw) ? raw.toString() : raw.toFixed(2);
-    } else {
-      displayValue = String(raw);
-    }
+         let displayValue;
+         if (def.format) {
+           displayValue = def.format(valueSource);
+         } else if (typeof valueSource === 'number') {
+           displayValue = Number.isInteger(valueSource)
+             ? valueSource.toString()
+             : valueSource.toFixed(2);
+         } else {
+           displayValue = String(valueSource);
+         }
 
-    const card = document.createElement('div');
-    card.className = 'stat-card';
+         const card = document.createElement('div');
+         card.className = 'stat-card';
 
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tooltip';
-    tooltip.textContent = def.tooltip;
-    card.appendChild(tooltip);
+         const tooltip = document.createElement('div');
+         tooltip.className = 'tooltip';
+         tooltip.textContent = def.tooltip;
+         card.appendChild(tooltip);
 
-    const label = document.createElement('div');
-    label.className = 'stat-label';
-    label.textContent = def.label;
-    card.appendChild(label);
+         const label = document.createElement('div');
+         label.className = 'stat-label';
+         label.textContent = def.label;
+         card.appendChild(label);
 
-    const value = document.createElement('div');
-    value.className = 'stat-value';
-    value.textContent = displayValue;
-    card.appendChild(value);
+         const valueEl = document.createElement('div');
+         valueEl.className = 'stat-value';
+         valueEl.textContent = displayValue;
+         card.appendChild(valueEl);
 
-    container.appendChild(card);
-  });
-}
+         container.appendChild(card);
+       });
+     }
+
+     function renderFixStats() {
+       const scopeData = getScopeFixMetrics(currentScope);
+       renderDefinitionGroup('fix-merged-grid', fixMergedDefinitions, scopeData);
+       renderDefinitionGroup('fix-open-grid', fixOpenDefinitions, scopeData);
+       renderDefinitionGroup('fix-closed-grid', fixClosedDefinitions, scopeData);
+     }
 
 function renderChart() {
   const scopeData = getScopeFixMetrics(currentScope);
@@ -423,6 +438,7 @@ window.addEventListener('load', async () => {
     metrics = await loadMetrics();
     initChartContext();
     setupScopeSwitcher();
+         setupWorkflowSwitcher();
     renderGeneratedAt();
     renderFixStats();
     renderChart();

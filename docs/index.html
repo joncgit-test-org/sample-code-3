@@ -185,19 +185,27 @@
 
   <section aria-labelledby="fix-metrics-heading">
     <div class="toolbar">
-      <h2 id="fix-metrics-heading">Fix Performance &amp; Statistics</h2>
+      <h2 id="fix-metrics-heading">Fix Performance</h2>
       <div>
-        <span style="font-size:0.8rem; color:#6b7280; margin-right:0.6rem;">Viewing:</span>
+        <span style="font-size:0.8rem; color:#6b7280; margin-right:0.6rem;">View metrics for:</span>
         <div class="segment-control" id="segment-control">
-          <button data-scope="overall" class="active">Overall (last 7 days)</button>
+          <button data-scope="overall" class="active">Overall</button>
+          <button data-scope="python">Python</button>
+          <button data-scope="dotnet">.NET</button>
+          <button data-scope="nodejs">Node.js</button>
         </div>
       </div>
     </div>
     <div class="timestamp" id="generated-at"></div>
 
-    <div class="stats-grid" id="fix-stats-grid">
-      <!-- Cards populated by metrics.js -->
-    </div>
+    <h3 style="margin-top:1.5rem; font-size:1.05rem; color:#f9fafb;">Merged PRs</h3>
+    <div class="stats-grid" id="fix-merged-grid"></div>
+
+    <h3 style="margin-top:1.8rem; font-size:1.05rem; color:#f9fafb;">Open PRs &amp; Issues</h3>
+    <div class="stats-grid" id="fix-open-grid"></div>
+
+    <h3 style="margin-top:1.8rem; font-size:1.05rem; color:#f9fafb;">Closed / Abandoned</h3>
+    <div class="stats-grid" id="fix-closed-grid"></div>
 
     <div class="chart-container">
       <div class="chart-header">
@@ -211,17 +219,37 @@
     </div>
   </section>
 
-    <section aria-labelledby="analysis-metrics-heading" style="margin-top:2.5rem;">
+  <section aria-labelledby="analysis-metrics-heading" style="margin-top:2.5rem;">
     <div class="toolbar">
-      <h2 id="analysis-metrics-heading">Analysis Performance &amp; Statistics</h2>
+      <h2 id="analysis-metrics-heading">Analysis Performance</h2>
     </div>
 
-    <div class="stats-grid" id="analysis-stats-grid">
-      <!-- Analysis stats cards populated by metrics.js -->
-    </div>
+    <h3 style="margin-top:1.5rem; font-size:1.05rem; color:#f9fafb;">Merged / Throughput</h3>
+    <div class="stats-grid" id="analysis-merged-grid"></div>
+
+    <h3 style="margin-top:1.8rem; font-size:1.05rem; color:#f9fafb;">Open Work &amp; Aging</h3>
+    <div class="stats-grid" id="analysis-open-grid"></div>
 
     <h3 style="margin-top:1.8rem; font-size:1.05rem; color:#f9fafb;">Current Fixes</h3>
     <div id="current-fixes-list" style="margin-top:0.6rem; font-size:0.85rem;"></div>
+  </section>
+
+  <section aria-labelledby="workflow-metrics-heading" style="margin-top:2.5rem;">
+    <div class="toolbar">
+      <h2 id="workflow-metrics-heading">Workflow Reliability</h2>
+      <div>
+        <span style="font-size:0.8rem; color:#6b7280; margin-right:0.6rem;">View workflow:</span>
+        <div class="segment-control" id="workflow-segment-control">
+          <button data-workflow="all" class="active">All Workflows</button>
+          <button data-workflow="aiParityScan">aiParityScan</button>
+          <button data-workflow="aiParityScanMerge">aiParityScanMerge</button>
+          <button data-workflow="aiParityIssueCreation">Issue Creation</button>
+          <button data-workflow="aiParityMaintenanceMetrics">Maintenance Metrics</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="workflow-stats-grid"></div>
   </section>
 
   <script src="metrics.js"></script>
