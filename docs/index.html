@@ -187,12 +187,9 @@
     <div class="toolbar">
       <h2 id="fix-metrics-heading">Fix Performance &amp; Statistics</h2>
       <div>
-        <span style="font-size:0.8rem; color:#6b7280; margin-right:0.6rem;">View metrics for:</span>
+        <span style="font-size:0.8rem; color:#6b7280; margin-right:0.6rem;">Viewing:</span>
         <div class="segment-control" id="segment-control">
-          <button data-scope="overall" class="active">Overall</button>
-          <button data-scope="python">Python</button>
-          <button data-scope="dotnet">.NET</button>
-          <button data-scope="nodejs">Node.js</button>
+          <button data-scope="overall" class="active">Overall (last 7 days)</button>
         </div>
       </div>
     </div>
@@ -206,7 +203,7 @@
       <div class="chart-header">
         <div>
           <div class="chart-title">Fix PR State Distribution</div>
-          <div class="chart-subtitle" id="chart-scope-label">Overall (last period)</div>
+          <div class="chart-subtitle" id="chart-scope-label">Overall (last 7 days)</div>
         </div>
       </div>
       <canvas id="fix-state-chart"></canvas>

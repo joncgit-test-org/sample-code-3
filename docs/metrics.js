@@ -1,21 +1,17 @@
 const METRICS_URL = 'parity-metrics.json';
 
-const statDefinitions = [
+const fixStatsDefinitions = [
   {
     key: 'total',
     label: 'Total Fix PRs',
-    tooltip: 'Total number of fix pull requests created in the evaluation period for the selected scope.',
+    tooltip:
+      'Total number of fix pull requests created in the evaluation period.',
   },
   {
     key: 'merged',
     label: 'Merged Fix PRs',
-    tooltip: 'Number of fix pull requests that were successfully merged in the evaluation period.',
-  },
-  {
-    key: 'mergeRate',
-    label: 'Merge Rate',
-    format: v => (v * 100).toFixed(1) + '%',
-    tooltip: 'Fraction of fix PRs that were merged: merged / total.',
+    tooltip:
+      'Number of fix pull requests that were successfully merged in the evaluation period.',
   },
   {
     key: 'open',
@@ -31,13 +27,31 @@ const statDefinitions = [
     key: 'avgCommentsPerPr',
     label: 'Avg Comments / PR',
     format: v => v.toFixed(2),
-    tooltip: 'Average number of review comments per merged fix PR.',
+    tooltip: 'Average number of review comments per fix PR.',
   },
   {
     key: 'avgCommitsPerPr',
     label: 'Avg Commits / PR',
     format: v => v.toFixed(2),
-    tooltip: 'Average number of commits per merged fix PR.',
+    tooltip: 'Average number of commits per fix PR.',
+  },
+  {
+    key: 'avgDaysToMerge',
+    label: 'Avg Days to Merge',
+    format: v => v.toFixed(2),
+    tooltip: 'Average number of days from PR creation to merge.',
+  },
+  {
+    key: 'avgOpenPrAgeDays',
+    label: 'Avg Open PR Age',
+    format: v => v.toFixed(2) + ' days',
+    tooltip: 'Average age in days of currently open fix PRs.',
+  },
+  {
+    key: 'avgOpenIssueAgeDays',
+    label: 'Avg Open Issue Age',
+    format: v => v.toFixed(2) + ' days',
+    tooltip: 'Average age in days of currently open parity issues.',
   },
 ];
 
@@ -55,18 +69,15 @@ async function loadMetrics() {
 }
 
 function getScopeFixMetrics(scope) {
+  // New data format has a single aggregate `fixPrs` object without per-language breakdown.
   if (!metrics || !metrics.fixPrs) return null;
 
   if (scope === 'overall') {
-    const { total, open, closedNotMerged, merged, mergeRate, avgCommentsPerPr, avgCommitsPerPr } =
-      metrics.fixPrs;
-    return { total, open, closedNotMerged, merged, mergeRate, avgCommentsPerPr, avgCommitsPerPr };
+    return metrics.fixPrs;
   }
 
-  const byLang = metrics.fixPrs.byLanguage || {};
-  const langData = byLang[scope];
-  if (!langData) return null;
-  return langData;
+  // For language-specific scopes, fall back to overall until per-language data is added again.
+  return metrics.fixPrs;
 }
 
 function renderGeneratedAt() {
@@ -89,7 +100,7 @@ function renderFixStats() {
     return;
   }
 
-  statDefinitions.forEach(def => {
+  fixStatsDefinitions.forEach(def => {
     const raw = scopeData[def.key];
     if (raw === undefined || raw === null) return;
 
@@ -130,10 +141,10 @@ function renderChart() {
   const labelEl = document.getElementById('chart-scope-label');
 
   const scopeLabelMap = {
-    overall: 'Overall (last period)',
-    python: 'Python (last period)',
-    dotnet: '.NET (last period)',
-    nodejs: 'Node.js (last period)',
+    overall: 'Overall (last 7 days)',
+    python: 'Python (fallback to overall)',
+    dotnet: '.NET (fallback to overall)',
+    nodejs: 'Node.js (fallback to overall)',
   };
   labelEl.textContent = scopeLabelMap[currentScope] || 'Selected scope';
 
