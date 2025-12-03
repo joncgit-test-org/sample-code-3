@@ -1,51 +1,49 @@
 const METRICS_URL = 'parity-metrics.json';
 
-const fixStatsDefinitions = [
-  {
-    key: 'total',
-    label: 'Total Fix PRs',
-    tooltip:
-      'Total number of fix pull requests created in the evaluation period.',
-  },
-      {
-        key: 'total',
-        label: 'Total Fix PRs',
-        tooltip:
-          'Total number of fix pull requests created in the evaluation period.',
-      },
+// Fix Performance: grouped tile definitions
+const fixMergedDefinitions = [
   {
     key: 'merged',
     label: 'Merged Fix PRs',
-    tooltip:
-      'Number of fix pull requests that were successfully merged in the evaluation period.',
+    tooltip: 'Number of fix pull requests merged in the period.',
   },
   {
-    key: 'open',
-    label: 'Open Fix PRs',
-    tooltip: 'Number of fix pull requests that are currently open.',
-  },
-  {
-    key: 'closedNotMerged',
-    label: 'Closed (Not Merged)',
-    tooltip: 'Number of fix pull requests that were closed without being merged.',
+    key: 'mergedPercent',
+    label: 'Merged Rate',
+    format: v => v.toFixed(1) + '%',
+    compute: data => {
+      const total = data.total ?? 0;
+      const merged = data.merged ?? 0;
+      if (!total) return 0;
+      return (merged / total) * 100;
+    },
+    tooltip: 'Merged PRs as a percentage of all fix PRs.',
   },
   {
     key: 'avgCommentsPerPr',
-    label: 'Avg Comments / PR',
-    format: v => v.toFixed(2),
-    tooltip: 'Average number of review comments per fix PR.',
+    label: 'Comments per PR',
+    format: v => v.toFixed(1),
+    tooltip: 'Average number of review comments per merged fix PR.',
   },
   {
     key: 'avgCommitsPerPr',
-    label: 'Avg Commits / PR',
-    format: v => v.toFixed(2),
-    tooltip: 'Average number of commits per fix PR.',
+    label: 'Commits per PR',
+    format: v => v.toFixed(1),
+    tooltip: 'Average number of commits per merged fix PR.',
   },
   {
     key: 'avgDaysToMerge',
-    label: 'Avg Days to Merge',
-    format: v => v.toFixed(2),
+    label: 'Time to Merge',
+    format: v => v.toFixed(2) + ' days',
     tooltip: 'Average number of days from PR creation to merge.',
+  },
+];
+
+const fixOpenDefinitions = [
+  {
+    key: 'open',
+    label: 'Open Fix PRs',
+    tooltip: 'Number of fix pull requests currently open.',
   },
   {
     key: 'avgOpenPrAgeDays',
@@ -58,6 +56,14 @@ const fixStatsDefinitions = [
     label: 'Avg Open Issue Age',
     format: v => v.toFixed(2) + ' days',
     tooltip: 'Average age in days of currently open parity issues.',
+  },
+];
+
+const fixClosedDefinitions = [
+  {
+    key: 'closedNotMerged',
+    label: 'Closed / Abandoned',
+    tooltip: 'Fix pull requests closed without being merged.',
   },
 ];
 
@@ -96,59 +102,59 @@ function renderGeneratedAt() {
   el.textContent = `Metrics generated at ${d.toUTCString()}`;
 }
 
-     function renderDefinitionGroup(containerId, definitions, data) {
-       const container = document.getElementById(containerId);
-       if (!container) return;
-       container.innerHTML = '';
+function renderDefinitionGroup(containerId, definitions, data) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
 
-       if (!data) {
-         container.innerHTML = '<div class="error">No metrics available for this scope.</div>';
-         return;
-       }
+  if (!data) {
+    container.innerHTML = '<div class="error">No metrics available for this scope.</div>';
+    return;
+  }
 
-       definitions.forEach(def => {
-         const valueSource = def.compute ? def.compute(data) : data[def.key];
-         if (valueSource === undefined || valueSource === null || Number.isNaN(valueSource)) return;
+  definitions.forEach(def => {
+    const valueSource = def.compute ? def.compute(data) : data[def.key];
+    if (valueSource === undefined || valueSource === null || Number.isNaN(valueSource)) return;
 
-         let displayValue;
-         if (def.format) {
-           displayValue = def.format(valueSource);
-         } else if (typeof valueSource === 'number') {
-           displayValue = Number.isInteger(valueSource)
-             ? valueSource.toString()
-             : valueSource.toFixed(2);
-         } else {
-           displayValue = String(valueSource);
-         }
+    let displayValue;
+    if (def.format) {
+      displayValue = def.format(valueSource);
+    } else if (typeof valueSource === 'number') {
+      displayValue = Number.isInteger(valueSource)
+        ? valueSource.toString()
+        : valueSource.toFixed(2);
+    } else {
+      displayValue = String(valueSource);
+    }
 
-         const card = document.createElement('div');
-         card.className = 'stat-card';
+    const card = document.createElement('div');
+    card.className = 'stat-card';
 
-         const tooltip = document.createElement('div');
-         tooltip.className = 'tooltip';
-         tooltip.textContent = def.tooltip;
-         card.appendChild(tooltip);
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip';
+    tooltip.textContent = def.tooltip;
+    card.appendChild(tooltip);
 
-         const label = document.createElement('div');
-         label.className = 'stat-label';
-         label.textContent = def.label;
-         card.appendChild(label);
+    const label = document.createElement('div');
+    label.className = 'stat-label';
+    label.textContent = def.label;
+    card.appendChild(label);
 
-         const valueEl = document.createElement('div');
-         valueEl.className = 'stat-value';
-         valueEl.textContent = displayValue;
-         card.appendChild(valueEl);
+    const valueEl = document.createElement('div');
+    valueEl.className = 'stat-value';
+    valueEl.textContent = displayValue;
+    card.appendChild(valueEl);
 
-         container.appendChild(card);
-       });
-     }
+    container.appendChild(card);
+  });
+}
 
-     function renderFixStats() {
-       const scopeData = getScopeFixMetrics(currentScope);
-       renderDefinitionGroup('fix-merged-grid', fixMergedDefinitions, scopeData);
-       renderDefinitionGroup('fix-open-grid', fixOpenDefinitions, scopeData);
-       renderDefinitionGroup('fix-closed-grid', fixClosedDefinitions, scopeData);
-     }
+function renderFixStats() {
+  const scopeData = getScopeFixMetrics(currentScope);
+  renderDefinitionGroup('fix-merged-grid', fixMergedDefinitions, scopeData);
+  renderDefinitionGroup('fix-open-grid', fixOpenDefinitions, scopeData);
+  renderDefinitionGroup('fix-closed-grid', fixClosedDefinitions, scopeData);
+}
 
 function renderChart() {
   const scopeData = getScopeFixMetrics(currentScope);
@@ -266,124 +272,123 @@ function initChartContext() {
   chartCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
 }
 
-function renderCurrentFixes() {
-  const container = document.getElementById('current-fixes-list');
-  container.innerHTML = '';
-
-  if (!metrics || !metrics.parityGaps || !Array.isArray(metrics.parityGaps.openFixIssues)) {
-    container.innerHTML = '<div class="error">No open fix issues available.</div>';
-    return;
-  }
-
-  const issues = metrics.parityGaps.openFixIssues;
-  if (issues.length === 0) {
-    container.textContent = 'No open fix issues at the moment.';
-    return;
-  }
-
-  const grid = document.createElement('div');
-  grid.className = 'stats-grid';
-
-  issues.slice(0, 3).forEach(issue => {
-    const card = document.createElement('div');
-    card.className = 'stat-card';
-    card.title = `${issue.title} • Open for ${issue.ageDays.toFixed(1)} days`;
-
-    const label = document.createElement('div');
-    label.className = 'stat-label';
-    label.textContent = `Fix Issue #${issue.issueNumber}`;
-
-    const value = document.createElement('div');
-    value.className = 'stat-value';
-    value.textContent = issue.language || 'unknown';
-
-    const meta = document.createElement('div');
-    meta.className = 'stat-meta';
-    const link = document.createElement('a');
-    link.href = issue.url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.textContent = issue.title;
-
-    const age = issue.ageDays != null ? issue.ageDays.toFixed(1) : 'N/A';
-    meta.textContent = `Open for ${age} days • `;
-    meta.appendChild(link);
-
-    card.appendChild(label);
-    card.appendChild(value);
-    card.appendChild(meta);
-    grid.appendChild(card);
-  });
-
-  container.appendChild(grid);
-}
+// Note: there is a second renderCurrentFixes below that renders the list view.
 
 function renderAnalysisStats() {
-  const container = document.getElementById('analysis-stats-grid');
-  container.innerHTML = '';
-
-  if (!metrics || !metrics.analysis || !metrics.parityGaps) {
-    container.innerHTML = '<div class="error">No analysis metrics available.</div>';
+  if (!metrics || !metrics.analysis) {
+    const merged = document.getElementById('analysis-merged-grid');
+    const open = document.getElementById('analysis-open-grid');
+    if (merged) {
+      merged.innerHTML = '<div class="error">No analysis metrics available.</div>';
+    }
+    if (open) {
+      open.innerHTML = '';
+    }
     return;
   }
 
   const analysis = metrics.analysis;
-  const gaps = metrics.parityGaps;
 
-  const cards = [
-    {
-      label: 'New Gaps Identified',
-      value: gaps.newGapsIdentified ?? 0,
-      tooltip: 'Number of new parity gaps identified since the previous task list snapshot.'
-    },
-    {
-      label: 'Time Since Last Analysis',
-      value: (analysis.timeSinceLastAnalysisDays ?? 0).toFixed(1) + ' days',
-      tooltip: 'Elapsed time in days since the most recent parity analysis issue was created.',
-      link: analysis.lastAnalysis?.url || null,
-      linkLabel: analysis.lastAnalysis ? `Issue #${analysis.lastAnalysis.issueNumber}` : null
-    },
-    {
-      label: 'Current Open Fixes',
-      value: gaps.openFixIssuesCount ?? (gaps.openFixIssues?.length ?? 0),
-      tooltip: 'Number of currently open [AI First Parity] fix issues.'
-    }
-  ];
+  const mergedContainer = document.getElementById('analysis-merged-grid');
+  const openContainer = document.getElementById('analysis-open-grid');
 
-  cards.forEach(card => {
-    const el = document.createElement('div');
-    el.className = 'stat-card';
+  if (mergedContainer) {
+    mergedContainer.innerHTML = '';
+    const mergedCards = [
+      {
+        label: 'Merged Analysis PRs',
+        value: analysis.mergedPrs ?? 0,
+        tooltip: 'Number of analysis PRs merged in the period.',
+      },
+      {
+        label: 'Merged PR %',
+        value: ((analysis.mergedPrPercent ?? 0).toFixed
+          ? analysis.mergedPrPercent.toFixed(1)
+          : Number(analysis.mergedPrPercent || 0).toFixed(1)) + '%',
+        tooltip: 'Share of analysis PRs that have been merged.',
+      },
+      {
+        label: 'Time to Merge PRs',
+        value: (analysis.avgPrDaysToMerge ?? 0).toFixed(2) + ' days',
+        tooltip: 'Average days from analysis PR creation to merge.',
+      },
+      {
+        label: 'Issue Close Time',
+        value: (analysis.avgIssueDaysOpenToClose ?? 0).toFixed(2) + ' days',
+        tooltip: 'Average time to close analysis issues.',
+      },
+    ];
 
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tooltip';
-    tooltip.textContent = card.tooltip;
-    el.appendChild(tooltip);
+    mergedCards.forEach(card => {
+      const el = document.createElement('div');
+      el.className = 'stat-card';
 
-    const label = document.createElement('div');
-    label.className = 'stat-label';
-    label.textContent = card.label;
-    el.appendChild(label);
+      const tooltip = document.createElement('div');
+      tooltip.className = 'tooltip';
+      tooltip.textContent = card.tooltip;
+      el.appendChild(tooltip);
 
-    const value = document.createElement('div');
-    value.className = 'stat-value';
-    value.textContent = card.value;
-    el.appendChild(value);
+      const label = document.createElement('div');
+      label.className = 'stat-label';
+      label.textContent = card.label;
+      el.appendChild(label);
 
-    if (card.link && card.linkLabel) {
-      const sub = document.createElement('div');
-      sub.className = 'stat-sub';
-      const a = document.createElement('a');
-      a.href = card.link;
-      a.textContent = card.linkLabel;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.style.color = '#60a5fa';
-      sub.appendChild(a);
-      el.appendChild(sub);
-    }
+      const value = document.createElement('div');
+      value.className = 'stat-value';
+      value.textContent = card.value;
+      el.appendChild(value);
 
-    container.appendChild(el);
-  });
+      mergedContainer.appendChild(el);
+    });
+  }
+
+  if (openContainer) {
+    openContainer.innerHTML = '';
+    const openCards = [
+      {
+        label: 'Open Analysis PRs',
+        value: analysis.openPrs ?? 0,
+        tooltip: 'Number of currently open analysis PRs.',
+      },
+      {
+        label: 'Closed (Not Merged)',
+        value: analysis.closedPrs ?? 0,
+        tooltip: 'Analysis PRs closed without being merged.',
+      },
+      {
+        label: 'Time Since Last PR',
+        value: (analysis.timeSinceLastAnalysisPrDays ?? 0).toFixed(1) + ' days',
+        tooltip: 'Time since the last analysis PR was created.',
+      },
+      {
+        label: 'Time Since Last Issue',
+        value: (analysis.timeSinceLastAnalysisIssueDays ?? 0).toFixed(1) + ' days',
+        tooltip: 'Time since the last analysis issue was created.',
+      },
+    ];
+
+    openCards.forEach(card => {
+      const el = document.createElement('div');
+      el.className = 'stat-card';
+
+      const tooltip = document.createElement('div');
+      tooltip.className = 'tooltip';
+      tooltip.textContent = card.tooltip;
+      el.appendChild(tooltip);
+
+      const label = document.createElement('div');
+      label.className = 'stat-label';
+      label.textContent = card.label;
+      el.appendChild(label);
+
+      const value = document.createElement('div');
+      value.className = 'stat-value';
+      value.textContent = card.value;
+      el.appendChild(value);
+
+      openContainer.appendChild(el);
+    });
+  }
 }
 
 function renderCurrentFixes() {
@@ -433,12 +438,36 @@ function renderCurrentFixes() {
   container.appendChild(list);
 }
 
+function setupWorkflowSwitcher() {
+  const control = document.getElementById('workflow-segment-control');
+  if (!control) return;
+
+  let currentWorkflowKey = 'all';
+
+  control.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-workflow]');
+    if (!btn) return;
+    const key = btn.dataset.workflow;
+    if (!key || key === currentWorkflowKey) return;
+
+    currentWorkflowKey = key;
+
+    control.querySelectorAll('button').forEach(b => {
+      b.classList.toggle('active', b === btn);
+    });
+
+    renderWorkflowStats(currentWorkflowKey);
+  });
+
+  renderWorkflowStats(currentWorkflowKey);
+}
+
 window.addEventListener('load', async () => {
   try {
     metrics = await loadMetrics();
     initChartContext();
     setupScopeSwitcher();
-         setupWorkflowSwitcher();
+    setupWorkflowSwitcher();
     renderGeneratedAt();
     renderFixStats();
     renderChart();
