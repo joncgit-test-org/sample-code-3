@@ -417,6 +417,7 @@ function getWorkflowMetrics(key) {
     success: w.success ?? 0,
     failure: w.failure ?? 0,
     skipped: w.skipped ?? 0,
+    cancelled: w.cancelled ?? 0,
     successRate: w.successRate ?? (w.totalRuns ? (w.success / w.totalRuns) * 100 : 0),
   };
 }
@@ -457,6 +458,11 @@ function renderWorkflowStats(currentWorkflowKey) {
       label: 'Skipped Runs',
       value: data.skipped ?? 0,
       tooltip: 'Number of workflow runs that were skipped.',
+    },
+    {
+      label: 'Cancelled Runs',
+      value: data.cancelled ?? 0,
+      tooltip: 'Number of workflow runs that were cancelled.',
     },
   ];
 
