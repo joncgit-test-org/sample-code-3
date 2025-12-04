@@ -52,10 +52,10 @@ const fixOpenDefinitions = [
     tooltip: 'Average age in days of currently open fix PRs.',
   },
   {
-    key: 'avgOpenIssueAgeDays',
-    label: 'Avg Open Issue Age',
-    format: v => v.toFixed(2) + ' days',
-    tooltip: 'Average age in days of currently open parity issues.',
+    key: 'openFixIssues',
+    label: 'Open Fix Issues',
+    compute: () => (metrics && metrics.fixIssues ? metrics.fixIssues.open ?? 0 : 0),
+    tooltip: 'Number of currently open fix issues in the repo.',
   },
 ];
 

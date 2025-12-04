@@ -1,62 +1,67 @@
 {
-	"generatedAt": "2025-12-03T12:00:00Z",
+	"generatedAt": "2025-12-04T12:00:00Z",
 	"evaluationPeriod": {
 		"totalDays": 7,
 		"lastWeek": 7
 	},
 	"fixPrs": {
-		"total": 12,
-		"open": 3,
-		"closedNotMerged": 2,
-		"merged": 7,
-		"avgCommentsPerPr": 4.3,
-		"avgCommitsPerPr": 3.1,
-		"avgDaysToMerge": 1.75,
-		"avgOpenPrAgeDays": 2.4,
-		"avgOpenIssueAgeDays": 5.2
+		"total": 15,
+		"open": 4,
+		"closedNotMerged": 3,
+		"merged": 8,
+		"avgCommentsPerPr": 5.1,
+		"avgCommitsPerPr": 2.8,
+		"avgDaysToMerge": 2.05,
+		"avgOpenPrAgeDays": 3.2,
+		"avgOpenIssueAgeDays": 6.0
+	},
+	"fixIssues": {
+		"open": 6,
+		"closed": 9,
+		"avgOpenIssueAgeDays": 6.0
 	},
 	"analysis": {
-		"openPrs": 4,
-		"mergedPrs": 5,
-		"closedPrs": 1,
-		"mergedPrPercent": 55.56,
-		"closedPrPercent": 11.11,
-		"avgPrDaysToMerge": 2.1,
-		"avgIssueDaysOpenToClose": 3.4,
-		"timeSinceLastAnalysisPrDays": 0.8,
-		"timeSinceLastAnalysisIssueDays": 1.3
+		"openPrs": 5,
+		"mergedPrs": 6,
+		"closedPrs": 2,
+		"mergedPrPercent": 54.55,
+		"closedPrPercent": 18.18,
+		"avgPrDaysToMerge": 2.3,
+		"avgIssueDaysOpenToClose": 3.9,
+		"timeSinceLastAnalysisPrDays": 0.5,
+		"timeSinceLastAnalysisIssueDays": 1.0
 	},
 	"workflows": {
 		"aiParityScan": {
-			"totalRuns": 14,
-			"success": 12,
+			"totalRuns": 16,
+			"success": 14,
 			"failure": 1,
 			"cancelled": 0,
 			"inProgress": 0,
 			"skipped": 1,
-			"successRate": 85.71
+			"successRate": 87.5
 		},
 		"aiParityScanMerge": {
-			"totalRuns": 10,
-			"success": 9,
+			"totalRuns": 11,
+			"success": 10,
 			"failure": 0,
 			"cancelled": 0,
 			"inProgress": 0,
 			"skipped": 1,
-			"successRate": 90.0
+			"successRate": 90.91
 		},
 		"aiParityIssueCreation": {
-			"totalRuns": 6,
-			"success": 5,
+			"totalRuns": 7,
+			"success": 6,
 			"failure": 0,
 			"cancelled": 1,
 			"inProgress": 0,
 			"skipped": 0,
-			"successRate": 83.33
+			"successRate": 85.71
 		},
 		"aiParityMaintenanceMetrics": {
-			"totalRuns": 3,
-			"success": 3,
+			"totalRuns": 4,
+			"success": 4,
 			"failure": 0,
 			"cancelled": 0,
 			"inProgress": 0,
