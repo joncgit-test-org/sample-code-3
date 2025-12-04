@@ -391,6 +391,7 @@ function aggregateWorkflows() {
     success: 0,
     failure: 0,
     skipped: 0,
+    cancelled: 0,
   };
 
   keys.forEach(k => {
@@ -399,6 +400,7 @@ function aggregateWorkflows() {
     agg.success += w.success ?? 0;
     agg.failure += w.failure ?? 0;
     agg.skipped += w.skipped ?? 0;
+    agg.cancelled += w.cancelled ?? 0;
   });
 
   agg.successRate = agg.totalRuns ? (agg.success / agg.totalRuns) * 100 : 0;
