@@ -391,6 +391,109 @@ function renderAnalysisStats() {
   }
 }
 
+function aggregateWorkflows() {
+  if (!metrics || !metrics.workflows) return null;
+  const workflows = metrics.workflows;
+  const keys = Object.keys(workflows);
+  if (!keys.length) return null;
+
+  const agg = {
+    totalRuns: 0,
+    success: 0,
+    failure: 0,
+    skipped: 0,
+  };
+
+  keys.forEach(k => {
+    const w = workflows[k];
+    agg.totalRuns += w.totalRuns ?? 0;
+    agg.success += w.success ?? 0;
+    agg.failure += w.failure ?? 0;
+    agg.skipped += w.skipped ?? 0;
+  });
+
+  agg.successRate = agg.totalRuns ? (agg.success / agg.totalRuns) * 100 : 0;
+  return agg;
+}
+
+function getWorkflowMetrics(key) {
+  if (!metrics || !metrics.workflows) return null;
+  if (key === 'all') {
+    return aggregateWorkflows();
+  }
+  const w = metrics.workflows[key];
+  if (!w) return null;
+  return {
+    totalRuns: w.totalRuns ?? 0,
+    success: w.success ?? 0,
+    failure: w.failure ?? 0,
+    skipped: w.skipped ?? 0,
+    successRate: w.successRate ?? (w.totalRuns ? (w.success / w.totalRuns) * 100 : 0),
+  };
+}
+
+function renderWorkflowStats(currentWorkflowKey) {
+  const container = document.getElementById('workflow-stats-grid');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const data = getWorkflowMetrics(currentWorkflowKey);
+  if (!data) {
+    container.innerHTML = '<div class="error">No workflow metrics available.</div>';
+    return;
+  }
+
+  const cards = [
+    {
+      label: 'Success Rate',
+      value: (data.successRate ?? 0).toFixed(1) + '%',
+      tooltip: 'Percentage of workflow runs that completed successfully.',
+    },
+    {
+      label: 'Successful Runs',
+      value: data.success ?? 0,
+      tooltip: 'Number of successful workflow runs in the period.',
+    },
+    {
+      label: 'Total Runs',
+      value: data.totalRuns ?? 0,
+      tooltip: 'Total number of workflow runs in the period.',
+    },
+    {
+      label: 'Failed Runs',
+      value: data.failure ?? 0,
+      tooltip: 'Number of workflow runs that failed.',
+    },
+    {
+      label: 'Skipped Runs',
+      value: data.skipped ?? 0,
+      tooltip: 'Number of workflow runs that were skipped.',
+    },
+  ];
+
+  cards.forEach(card => {
+    const el = document.createElement('div');
+    el.className = 'stat-card';
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip';
+    tooltip.textContent = card.tooltip;
+    el.appendChild(tooltip);
+
+    const label = document.createElement('div');
+    label.className = 'stat-label';
+    label.textContent = card.label;
+    el.appendChild(label);
+
+    const value = document.createElement('div');
+    value.className = 'stat-value';
+    value.textContent = card.value;
+    el.appendChild(value);
+
+    container.appendChild(el);
+  });
+}
+
 function renderCurrentFixes() {
   const container = document.getElementById('current-fixes-list');
   container.innerHTML = '';
