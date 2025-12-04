@@ -51,18 +51,12 @@ const fixOpenDefinitions = [
     format: v => v.toFixed(2) + ' days',
     tooltip: 'Average age in days of currently open fix PRs.',
   },
-  {
-    key: 'openFixIssues',
-    label: 'Open Fix Issues',
-    compute: () => (metrics && metrics.fixIssues ? metrics.fixIssues.open ?? 0 : 0),
-    tooltip: 'Number of currently open fix issues in the repo.',
-  },
 ];
 
 const fixClosedDefinitions = [
   {
     key: 'closedNotMerged',
-    label: 'Closed / Abandoned',
+    label: 'Closed PRs',
     tooltip: 'Fix pull requests closed without being merged.',
   },
 ];
@@ -360,11 +354,6 @@ function renderAnalysisStats() {
         value: (analysis.timeSinceLastAnalysisPrDays ?? 0).toFixed(1) + ' days',
         tooltip: 'Time since the last analysis PR was created.',
       },
-      {
-        label: 'Time Since Last Issue',
-        value: (analysis.timeSinceLastAnalysisIssueDays ?? 0).toFixed(1) + ' days',
-        tooltip: 'Time since the last analysis issue was created.',
-      },
     ];
 
     openCards.forEach(card => {
@@ -494,52 +483,7 @@ function renderWorkflowStats(currentWorkflowKey) {
   });
 }
 
-function renderCurrentFixes() {
-  const container = document.getElementById('current-fixes-list');
-  container.innerHTML = '';
-
-  if (!metrics || !metrics.parityGaps || !Array.isArray(metrics.parityGaps.openFixIssues)) {
-    container.innerHTML = '<div class="error">No open fix issues available.</div>';
-    return;
-  }
-
-  const issues = metrics.parityGaps.openFixIssues;
-  if (issues.length === 0) {
-    container.textContent = 'No open fix issues at the moment.';
-    return;
-  }
-
-  const list = document.createElement('ul');
-  list.style.listStyle = 'none';
-  list.style.padding = '0';
-  list.style.margin = '0';
-
-  issues.forEach(issue => {
-    const li = document.createElement('li');
-    li.style.marginBottom = '0.4rem';
-
-    const link = document.createElement('a');
-    link.href = issue.url;
-    link.textContent = `#${issue.issueNumber} ${issue.title}`;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.style.color = '#60a5fa';
-    link.style.textDecoration = 'none';
-
-    const meta = document.createElement('div');
-    meta.style.fontSize = '0.8rem';
-    meta.style.color = '#6b7280';
-    const lang = issue.language || 'unknown';
-    const age = issue.ageDays != null ? issue.ageDays.toFixed(1) : 'N/A';
-    meta.textContent = `${lang} • open for ${age} days`;
-
-    li.appendChild(link);
-    li.appendChild(meta);
-    list.appendChild(li);
-  });
-
-  container.appendChild(list);
-}
+// Current Fixes list rendering has been removed for now per design.
 
 function setupWorkflowSwitcher() {
   const control = document.getElementById('workflow-segment-control');
@@ -575,7 +519,6 @@ window.addEventListener('load', async () => {
     renderFixStats();
     renderChart();
     renderAnalysisStats();
-    renderCurrentFixes();
   } catch (err) {
     console.error(err);
     const grid = document.getElementById('fix-stats-grid');

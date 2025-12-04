@@ -21,15 +21,15 @@
 		"avgOpenIssueAgeDays": 6.0
 	},
 	"analysis": {
-		"openPrs": 5,
-		"mergedPrs": 6,
+		"openPrs": 1,
+		"mergedPrs": 7,
 		"closedPrs": 2,
-		"mergedPrPercent": 54.55,
-		"closedPrPercent": 18.18,
+		"mergedPrPercent": 70.0,
+		"closedPrPercent": 20.0,
 		"avgPrDaysToMerge": 2.3,
 		"avgIssueDaysOpenToClose": 3.9,
-		"timeSinceLastAnalysisPrDays": 0.5,
-		"timeSinceLastAnalysisIssueDays": 1.0
+		"timeSinceLastAnalysisPrDays": 4.5,
+		"timeSinceLastAnalysisIssueDays": 5.0
 	},
 	"workflows": {
 		"aiParityScan": {

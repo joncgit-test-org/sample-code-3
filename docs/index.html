@@ -187,7 +187,7 @@
     <div class="toolbar">
       <h2 id="fix-metrics-heading">Fix Performance</h2>
       <div>
-        <span style="font-size:0.8rem; color:#6b7280; margin-right:0.6rem;">View metrics for:</span>
+        <span style="font-size:0.8rem; color:#6b7280; margin-right:0.6rem;">Select Language:</span>
         <div class="segment-control" id="segment-control">
           <button data-scope="overall" class="active">Overall</button>
           <button data-scope="python">Python</button>
@@ -201,20 +201,17 @@
     <h3 style="margin-top:1.5rem; font-size:1.05rem; color:#f9fafb;">Merged PRs</h3>
     <div class="stats-grid" id="fix-merged-grid"></div>
 
-    <h3 style="margin-top:1.8rem; font-size:1.05rem; color:#f9fafb;">Open PRs &amp; Issues</h3>
+    <h3 style="margin-top:1.8rem; font-size:1.05rem; color:#f9fafb;">Open PRs</h3>
     <div class="stats-grid" id="fix-open-grid"></div>
 
-    <h3 style="margin-top:1.8rem; font-size:1.05rem; color:#f9fafb;">Closed / Abandoned</h3>
-    <div class="stats-grid" id="fix-closed-grid"></div>
+    <h3 style="margin-top:1.8rem; font-size:1.05rem; color:#f9fafb;">Closed PRs</h3>
+    <div class="stats-grid" id="fix-closed-grid" style="margin-bottom:2.5rem;"></div>
 
-    <h3 style="margin-top:1.8rem; font-size:1.05rem; color:#f9fafb;">Current Fixes</h3>
-    <div id="current-fixes-list" style="margin-top:0.6rem; font-size:0.85rem;"></div>
-
-    <div class="chart-container">
+    <div class="chart-container" style="margin-top:0.5rem;">
       <div class="chart-header">
         <div>
           <div class="chart-title">Fix PR State Distribution</div>
-          <div class="chart-subtitle" id="chart-scope-label">Overall (last 7 days)</div>
+          <div class="chart-subtitle" id="chart-scope-label">(Last 7 Days)</div>
         </div>
       </div>
       <canvas id="fix-state-chart"></canvas>
@@ -227,22 +224,22 @@
       <h2 id="analysis-metrics-heading">Analysis Performance</h2>
     </div>
 
-    <h3 style="margin-top:1.5rem; font-size:1.05rem; color:#f9fafb;">Merged / Throughput</h3>
+    <h3 style="margin-top:1.5rem; font-size:1.05rem; color:#f9fafb;">Merge Performance</h3>
     <div class="stats-grid" id="analysis-merged-grid"></div>
 
-  <h3 style="margin-top:1.8rem; font-size:1.05rem; color:#f9fafb;">Open Work &amp; Aging</h3>
+  <h3 style="margin-top:1.8rem; font-size:1.05rem; color:#f9fafb;">Recency</h3>
   <div class="stats-grid" id="analysis-open-grid"></div>
   </section>
 
   <section aria-labelledby="workflow-metrics-heading" style="margin-top:2.5rem;">
     <div class="toolbar">
-      <h2 id="workflow-metrics-heading">Workflow Reliability</h2>
+      <h2 id="workflow-metrics-heading">Workflow Performance</h2>
       <div>
-        <span style="font-size:0.8rem; color:#6b7280; margin-right:0.6rem;">View workflow:</span>
+        <span style="font-size:0.8rem; color:#6b7280; margin-right:0.6rem;">Select workflow:</span>
         <div class="segment-control" id="workflow-segment-control">
           <button data-workflow="all" class="active">All Workflows</button>
-          <button data-workflow="aiParityScan">aiParityScan</button>
-          <button data-workflow="aiParityScanMerge">aiParityScanMerge</button>
+          <button data-workflow="aiParityScan">Parity Analysis</button>
+          <button data-workflow="aiParityScanMerge">Parity Analysis Merge</button>
           <button data-workflow="aiParityIssueCreation">Issue Creation</button>
           <button data-workflow="aiParityMaintenanceMetrics">Maintenance Metrics</button>
         </div>
