@@ -353,22 +353,22 @@
 
             <div class="metric-card">
                 <div class="metric-tooltip">
-                    Number of parity issues created and tracked. Includes open and closed issues from the last 7 days.
+                    Percentage of fix PRs that were successfully merged. Indicates the completion rate of parity fixes.
                 </div>
-                <h3>Parity Issues</h3>
-                <div class="metric-value loading" id="parity-issues">-</div>
-                <div class="metric-label">Open: <span id="open-issues" class="loading">-</span> | Closed: <span id="closed-issues" class="loading">-</span></div>
-                <div class="trend neutral" id="issues-trend">Last 7 days</div>
+                <h3>Fix PR Merge Rate</h3>
+                <div class="metric-value loading" id="fix-merge-rate">-</div>
+                <div class="metric-label loading" id="fix-merge-label">- merged of - total</div>
+                <div class="trend neutral" id="fix-merge-trend">Calculating...</div>
             </div>
 
             <div class="metric-card">
                 <div class="metric-tooltip">
-                    Percentage of issues assigned to copilot-swe-agent that resulted in a PR being created. Target: > 95%
+                    Number of "[AI First Parity Analysis]" issues and PRs created and tracked. Includes open and closed from the last 7 days.
                 </div>
-                <h3>Copilot PR Success Rate</h3>
-                <div class="metric-value loading" id="copilot-success">-</div>
-                <div class="metric-label loading" id="copilot-label">- of - issues</div>
-                <div class="trend neutral" id="copilot-trend">Calculating...</div>
+                <h3>Analysis Issues & PRs</h3>
+                <div class="metric-value loading" id="analysis-total">-</div>
+                <div class="metric-label">Issues: <span id="analysis-issues" class="loading">-</span> | PRs: <span id="analysis-prs" class="loading">-</span></div>
+                <div class="trend neutral" id="analysis-items-trend">Last 7 days</div>
             </div>
 
             <div class="metric-card">
@@ -403,8 +403,8 @@
                         <div class="label">Avg Comments per Fix PR</div>
                     </div>
                     <div class="summary-stat">
-                        <div class="value" id="avg-commits">-</div>
-                        <div class="label">Avg Commits per Fix PR</div>
+                        <div class="value" id="avg-review-rounds">-</div>
+                        <div class="label">Avg Review Rounds per PR</div>
                     </div>
                     <div class="summary-stat">
                         <div class="value" id="stale-issues">-</div>

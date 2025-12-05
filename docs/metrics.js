@@ -25,12 +25,12 @@ let metricsData = null;
 
 // Manual metrics data (to be updated based on evaluations)
 const manualMetrics = {
-    detectionAccuracy: 92.5, // Update with actual %
-    avgQualityScore: 3.8, // Update with actual score
-    qualityDistribution: [15, 25, 8, 2, 0], // [5s, 4s, 3s, 2s, 1s]
-    developerSatisfaction: 4.2,
-    contextUtilization: 85,
-    falsePositiveRate: 3.5
+    detectionAccuracy: null, // % (target: > 90)
+    avgQualityScore: null, // 1-5 scale (target: > 3.5)
+    qualityDistribution: [0, 0, 0, 0, 0], // [excellent(5), good(4), acceptable(3), needs work(2), poor(1)]
+    developerSatisfaction: null, // 1-5 scale (target: > 4.0)
+    contextUtilization: null, // % (target: > 80)
+    falsePositiveRate: null // % (target: < 5)
 };
 
 // Load metrics from parity-metrics.json
@@ -90,32 +90,34 @@ function updateVolumeMetrics(metrics) {
     document.getElementById('merged-fix-prs').textContent = fixPrs.merged;
     document.getElementById('merged-fix-prs').classList.remove('loading');
     
-    // Parity Issues
-    const totalIssues = fixIssues.open + fixIssues.closed;
-    document.getElementById('parity-issues').textContent = totalIssues;
-    document.getElementById('parity-issues').classList.remove('loading');
-    document.getElementById('open-issues').textContent = fixIssues.open;
-    document.getElementById('open-issues').classList.remove('loading');
-    document.getElementById('closed-issues').textContent = fixIssues.closed;
-    document.getElementById('closed-issues').classList.remove('loading');
-    
-    // Copilot Success Rate
-    const copilotSuccessRate = fixIssues.assignedToAgent > 0 
-        ? (fixPrs.createdByAgent / fixIssues.assignedToAgent * 100) 
+    // Fix PR Merge Rate
+    const fixMergeRate = totalFixPrs > 0 
+        ? (fixPrs.merged / totalFixPrs * 100) 
         : 0;
-    document.getElementById('copilot-success').textContent = `${copilotSuccessRate.toFixed(1)}%`;
-    document.getElementById('copilot-success').classList.remove('loading');
-    document.getElementById('copilot-label').textContent = `${fixPrs.createdByAgent} of ${fixIssues.assignedToAgent} issues`;
-    document.getElementById('copilot-label').classList.remove('loading');
+    document.getElementById('fix-merge-rate').textContent = `${fixMergeRate.toFixed(1)}%`;
+    document.getElementById('fix-merge-rate').classList.remove('loading');
+    document.getElementById('fix-merge-label').textContent = `${fixPrs.merged} merged of ${totalFixPrs} total`;
+    document.getElementById('fix-merge-label').classList.remove('loading');
     
-    const copilotTrend = document.getElementById('copilot-trend');
-    if (copilotSuccessRate >= 95) {
-        copilotTrend.textContent = '✅ Meets target (>95%)';
-        copilotTrend.className = 'trend up';
+    const fixMergeTrend = document.getElementById('fix-merge-trend');
+    if (fixMergeRate >= 70) {
+        fixMergeTrend.textContent = '✅ Meets target (>70%)';
+        fixMergeTrend.className = 'trend up';
     } else {
-        copilotTrend.textContent = `⚠️ Below target (${(95 - copilotSuccessRate).toFixed(1)}% gap)`;
-        copilotTrend.className = 'trend down';
+        fixMergeTrend.textContent = `⚠️ Below target (${(70 - fixMergeRate).toFixed(1)}% gap)`;
+        fixMergeTrend.className = 'trend down';
     }
+    
+    // Analysis Issues & PRs
+    const totalAnalysisPrs = analysis.openPrs + analysis.mergedPrs + analysis.closedPrs;
+    const totalAnalysisIssues = analysis.openIssues + analysis.closedIssues;
+    const totalAnalysisItems = totalAnalysisPrs + totalAnalysisIssues;
+    document.getElementById('analysis-total').textContent = totalAnalysisItems;
+    document.getElementById('analysis-total').classList.remove('loading');
+    document.getElementById('analysis-issues').textContent = totalAnalysisIssues;
+    document.getElementById('analysis-issues').classList.remove('loading');
+    document.getElementById('analysis-prs').textContent = totalAnalysisPrs;
+    document.getElementById('analysis-prs').classList.remove('loading')
     
     // Analysis PR Merge Rate
     const analysisMergeRate = (analysis.openPrs + analysis.mergedPrs + analysis.closedPrs) > 0
@@ -144,8 +146,8 @@ function updateSummaryStats(metrics) {
     document.getElementById('avg-comments').textContent = 
         metrics.fixPrs.avgCommentsPerPr.toFixed(1);
     
-    document.getElementById('avg-commits').textContent = 
-        metrics.fixPrs.avgCommitsPerPr.toFixed(1);
+    document.getElementById('avg-review-rounds').textContent = 
+        metrics.fixPrs.reviewRounds
     
     document.getElementById('stale-issues').textContent = 
         metrics.fixIssues.staleCount;
@@ -201,6 +203,10 @@ function createOverviewChart(metrics) {
         ? (metrics.fixPrs.createdByAgent / metrics.fixIssues.assignedToAgent * 100) 
         : 0;
     
+    const fixMergeRate = metrics.fixPrs.total > 0
+        ? (metrics.fixPrs.merged / metrics.fixPrs.total * 100)
+        : 0;
+    
     const analysisMergeRate = (metrics.analysis.openPrs + metrics.analysis.mergedPrs + metrics.analysis.closedPrs) > 0
         ? (metrics.analysis.mergedPrs / (metrics.analysis.openPrs + metrics.analysis.mergedPrs + metrics.analysis.closedPrs) * 100)
         : 0;
@@ -211,15 +217,15 @@ function createOverviewChart(metrics) {
         data: {
             labels: [
                 'Copilot PR\nSuccess Rate',
-                'Analysis PR\nMerge Rate',
-                'Fix PR\nMerge Rate'
+                'Fix PR\nMerge Rate',
+                'Analysis PR\nMerge Rate'
             ],
             datasets: [{
                 label: 'Current %',
                 data: [
                     copilotSuccessRate,
-                    analysisMergeRate,
-                    metrics.analysis.mergedPrPercent
+                    fixMergeRate,
+                    analysisMergeRate
                 ],
                 backgroundColor: [
                     chartColors.primary,
@@ -230,13 +236,18 @@ function createOverviewChart(metrics) {
             }, {
                 label: 'Target %',
                 data: [95, 70, 70],
-                type: 'line',
-                borderColor: chartColors.warning,
+                backgroundColor: [
+                    'rgba(255, 193, 7, 0.3)',
+                    'rgba(255, 193, 7, 0.3)',
+                    'rgba(255, 193, 7, 0.3)'
+                ],
+                borderColor: [
+                    chartColors.warning,
+                    chartColors.warning,
+                    chartColors.warning
+                ],
                 borderWidth: 2,
-                borderDash: [5, 5],
-                fill: false,
-                pointRadius: 4,
-                pointBackgroundColor: chartColors.warning
+                borderDash: [5, 5]
             }]
         },
         options: {
@@ -504,6 +515,18 @@ function createAnalysisChart(metrics) {
                     display: true,
                     text: 'Analysis Pipeline Time Metrics',
                     font: { size: 16 }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    formatter: function(value) {
+                        return value.toFixed(1);
+                    },
+                    font: {
+                        weight: 'bold',
+                        size: 12
+                    },
+                    color: '#333'
                 }
             },
             scales: {
@@ -512,7 +535,23 @@ function createAnalysisChart(metrics) {
                     title: { display: true, text: 'Days' }
                 }
             }
-        }
+        },
+        plugins: [{
+            afterDraw: function(chart) {
+                const ctx = chart.ctx;
+                chart.data.datasets.forEach((dataset, i) => {
+                    const meta = chart.getDatasetMeta(i);
+                    meta.data.forEach((bar, index) => {
+                        const data = dataset.data[index];
+                        ctx.fillStyle = '#333';
+                        ctx.font = 'bold 12px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText(data.toFixed(1), bar.x, bar.y - 5);
+                    });
+                });
+            }
+        }]
     });
 }
 
