@@ -1,542 +1,595 @@
-const METRICS_URL = 'parity-metrics.json';
+// Tab switching functionality
+function showTab(tabName) {
+    const contents = document.querySelectorAll('.tab-content');
+    contents.forEach(content => content.classList.remove('active'));
+    
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    
+    document.getElementById(tabName).classList.add('active');
+    event.target.classList.add('active');
+}
 
-// Fix Performance: grouped tile definitions
-const fixMergedDefinitions = [
-  {
-    key: 'merged',
-    label: 'Merged Fix PRs',
-    tooltip: 'Number of fix pull requests merged in the period.',
-  },
-  {
-    key: 'mergedPercent',
-    label: 'Merged Rate',
-    format: v => v.toFixed(1) + '%',
-    compute: data => {
-      const total = data.total ?? 0;
-      const merged = data.merged ?? 0;
-      if (!total) return 0;
-      return (merged / total) * 100;
-    },
-    tooltip: 'Merged PRs as a percentage of all fix PRs.',
-  },
-  {
-    key: 'avgCommentsPerPr',
-    label: 'Comments per PR',
-    format: v => v.toFixed(1),
-    tooltip: 'Average number of review comments per merged fix PR.',
-  },
-  {
-    key: 'avgCommitsPerPr',
-    label: 'Commits per PR',
-    format: v => v.toFixed(1),
-    tooltip: 'Average number of commits per merged fix PR.',
-  },
-  {
-    key: 'avgDaysToMerge',
-    label: 'Time to Merge',
-    format: v => v.toFixed(2) + ' days',
-    tooltip: 'Average number of days from PR creation to merge.',
-  },
-];
+// Chart.js configurations
+const chartColors = {
+    primary: '#667eea',
+    secondary: '#764ba2',
+    success: '#28a745',
+    warning: '#ffc107',
+    danger: '#dc3545',
+    info: '#17a2b8'
+};
 
-const fixOpenDefinitions = [
-  {
-    key: 'open',
-    label: 'Open Fix PRs',
-    tooltip: 'Number of fix pull requests currently open.',
-  },
-  {
-    key: 'avgOpenPrAgeDays',
-    label: 'Avg Open PR Age',
-    format: v => v.toFixed(2) + ' days',
-    tooltip: 'Average age in days of currently open fix PRs.',
-  },
-];
+let charts = {};
+let metricsData = null;
 
-const fixClosedDefinitions = [
-  {
-    key: 'closedNotMerged',
-    label: 'Closed PRs',
-    tooltip: 'Fix pull requests closed without being merged.',
-  },
-];
+// Manual metrics data (to be updated based on evaluations)
+const manualMetrics = {
+    detectionAccuracy: null, // % (target: > 90)
+    avgQualityScore: null, // 1-5 scale (target: > 3.5)
+    qualityDistribution: [0, 0, 0, 0, 0], // [excellent(5), good(4), acceptable(3), needs work(2), poor(1)]
+    developerSatisfaction: null, // 1-5 scale (target: > 4.0)
+    contextUtilization: null, // % (target: > 80)
+    falsePositiveRate: null // % (target: < 5)
+};
 
-let metrics = null;
-let currentScope = 'overall';
-let chartCtx = null;
-let chartData = null;
-
+// Load metrics from parity-metrics.json
 async function loadMetrics() {
-  const res = await fetch(METRICS_URL, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error(`Failed to load metrics: ${res.status}`);
-  }
-  return res.json();
+    try {
+        const response = await fetch('parity-metrics.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        metricsData = await response.json();
+        console.log('✅ Metrics loaded successfully');
+        updateDashboard(metricsData);
+    } catch (error) {
+        console.error('❌ Error loading metrics:', error);
+        showError('Failed to load metrics data. Please ensure parity-metrics.json is accessible.');
+    }
 }
 
-function getScopeFixMetrics(scope) {
-  // New data format has a single aggregate `fixPrs` object without per-language breakdown.
-  if (!metrics || !metrics.fixPrs) return null;
-
-  if (scope === 'overall') {
-    return metrics.fixPrs;
-  }
-
-  // For language-specific scopes, fall back to overall until per-language data is added again.
-  return metrics.fixPrs;
+// Update dashboard with loaded metrics
+function updateDashboard(metrics) {
+    console.log('📊 Updating dashboard...');
+    
+    // Update volume metrics
+    updateVolumeMetrics(metrics);
+    
+    // Update summary stats
+    updateSummaryStats(metrics);
+    
+    // Create charts
+    createOverviewChart(metrics);
+    createWorkflowChart(metrics);
+    createQualityChart(metrics);
+    createIssuesPrsChart(metrics);
+    createAnalysisChart(metrics);
+    
+    // Update production criteria
+    updateProductionCriteria(metrics);
+    
+    // Update footer
+    updateFooter(metrics);
+    
+    console.log('✅ Dashboard updated successfully');
 }
 
-function renderGeneratedAt() {
-  const el = document.getElementById('generated-at');
-  if (!metrics || !metrics.generatedAt) {
-    el.textContent = '';
-    return;
-  }
-  const d = new Date(metrics.generatedAt);
-  el.textContent = `Metrics generated at ${d.toUTCString()}`;
-}
-
-function renderDefinitionGroup(containerId, definitions, data) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  container.innerHTML = '';
-
-  if (!data) {
-    container.innerHTML = '<div class="error">No metrics available for this scope.</div>';
-    return;
-  }
-
-  definitions.forEach(def => {
-    const valueSource = def.compute ? def.compute(data) : data[def.key];
-    if (valueSource === undefined || valueSource === null || Number.isNaN(valueSource)) return;
-
-    let displayValue;
-    if (def.format) {
-      displayValue = def.format(valueSource);
-    } else if (typeof valueSource === 'number') {
-      displayValue = Number.isInteger(valueSource)
-        ? valueSource.toString()
-        : valueSource.toFixed(2);
+// Update volume metric cards
+function updateVolumeMetrics(metrics) {
+    const fixPrs = metrics.fixPrs;
+    const fixIssues = metrics.fixIssues;
+    const analysis = metrics.analysis;
+    
+    // Total Fix PRs
+    const totalFixPrs = fixPrs.total;
+    document.getElementById('total-fix-prs').textContent = totalFixPrs;
+    document.getElementById('total-fix-prs').classList.remove('loading');
+    document.getElementById('open-fix-prs').textContent = fixPrs.open;
+    document.getElementById('open-fix-prs').classList.remove('loading');
+    document.getElementById('merged-fix-prs').textContent = fixPrs.merged;
+    document.getElementById('merged-fix-prs').classList.remove('loading');
+    
+    // Parity Issues
+    const totalIssues = fixIssues.open + fixIssues.closed;
+    document.getElementById('parity-issues').textContent = totalIssues;
+    document.getElementById('parity-issues').classList.remove('loading');
+    document.getElementById('open-issues').textContent = fixIssues.open;
+    document.getElementById('open-issues').classList.remove('loading');
+    document.getElementById('closed-issues').textContent = fixIssues.closed;
+    document.getElementById('closed-issues').classList.remove('loading');
+    
+    // Copilot Success Rate
+    const copilotSuccessRate = fixIssues.assignedToAgent > 0 
+        ? (fixPrs.createdByAgent / fixIssues.assignedToAgent * 100) 
+        : 0;
+    document.getElementById('copilot-success').textContent = `${copilotSuccessRate.toFixed(1)}%`;
+    document.getElementById('copilot-success').classList.remove('loading');
+    document.getElementById('copilot-label').textContent = `${fixPrs.createdByAgent} of ${fixIssues.assignedToAgent} issues`;
+    document.getElementById('copilot-label').classList.remove('loading');
+    
+    const copilotTrend = document.getElementById('copilot-trend');
+    if (copilotSuccessRate >= 95) {
+        copilotTrend.textContent = '✅ Meets target (>95%)';
+        copilotTrend.className = 'trend up';
     } else {
-      displayValue = String(valueSource);
+        copilotTrend.textContent = `⚠️ Below target (${(95 - copilotSuccessRate).toFixed(1)}% gap)`;
+        copilotTrend.className = 'trend down';
     }
-
-    const card = document.createElement('div');
-    card.className = 'stat-card';
-
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tooltip';
-    tooltip.textContent = def.tooltip;
-    card.appendChild(tooltip);
-
-    const label = document.createElement('div');
-    label.className = 'stat-label';
-    label.textContent = def.label;
-    card.appendChild(label);
-
-    const valueEl = document.createElement('div');
-    valueEl.className = 'stat-value';
-    valueEl.textContent = displayValue;
-    card.appendChild(valueEl);
-
-    container.appendChild(card);
-  });
-}
-
-function renderFixStats() {
-  const scopeData = getScopeFixMetrics(currentScope);
-  renderDefinitionGroup('fix-merged-grid', fixMergedDefinitions, scopeData);
-  renderDefinitionGroup('fix-open-grid', fixOpenDefinitions, scopeData);
-  renderDefinitionGroup('fix-closed-grid', fixClosedDefinitions, scopeData);
-}
-
-function renderChart() {
-  const scopeData = getScopeFixMetrics(currentScope);
-  const errorEl = document.getElementById('chart-error');
-  const labelEl = document.getElementById('chart-scope-label');
-
-  const scopeLabelMap = {
-    overall: 'Overall (last 7 days)',
-    python: 'Python (fallback to overall)',
-    dotnet: '.NET (fallback to overall)',
-    nodejs: 'Node.js (fallback to overall)',
-  };
-  labelEl.textContent = scopeLabelMap[currentScope] || 'Selected scope';
-
-  if (!scopeData) {
-    errorEl.style.display = 'block';
-    errorEl.textContent = 'No data available to render chart for this scope.';
-    clearChart();
-    return;
-  }
-
-  errorEl.style.display = 'none';
-
-  const open = scopeData.open || 0;
-  const merged = scopeData.merged || 0;
-  const closed = scopeData.closedNotMerged || 0;
-
-  chartData = { open, merged, closed };
-
-  drawBarChart();
-}
-
-function clearChart() {
-  if (!chartCtx) return;
-  const canvas = chartCtx.canvas;
-  chartCtx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-function drawBarChart() {
-  if (!chartCtx || !chartData) return;
-  const canvas = chartCtx.canvas;
-  const ctx = chartCtx;
-  const { width, height } = canvas;
-
-  ctx.clearRect(0, 0, width, height);
-
-  const values = [chartData.open, chartData.merged, chartData.closed];
-  const labels = ['Open', 'Merged', 'Closed'];
-  const colors = ['#f97316', '#22c55e', '#ef4444'];
-
-  const max = Math.max(...values, 1);
-  const padding = { top: 20, right: 20, bottom: 35, left: 30 };
-  const chartWidth = width - padding.left - padding.right;
-  const chartHeight = height - padding.top - padding.bottom;
-  const barWidth = chartWidth / (values.length * 1.6);
-
-  ctx.font = '11px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-
-  values.forEach((val, i) => {
-    const xCenter =
-      padding.left + (i + 0.5) * (chartWidth / values.length);
-    const barHeight = (val / max) * chartHeight;
-    const yTop = padding.top + (chartHeight - barHeight);
-
-    // Bar
-    ctx.fillStyle = colors[i];
-    ctx.beginPath();
-    ctx.roundRect(
-      xCenter - barWidth / 2,
-      yTop,
-      barWidth,
-      barHeight,
-      6
-    );
-    ctx.fill();
-
-    // Value label
-    ctx.fillStyle = '#e5e7eb';
-    ctx.fillText(val.toString(), xCenter, yTop - 14);
-
-    // X label
-    ctx.fillStyle = '#9ca3af';
-    ctx.fillText(labels[i], xCenter, padding.top + chartHeight + 6);
-  });
-}
-
-function setupScopeSwitcher() {
-  const control = document.getElementById('segment-control');
-  control.addEventListener('click', e => {
-    const btn = e.target.closest('button[data-scope]');
-    if (!btn) return;
-    const scope = btn.dataset.scope;
-    if (scope === currentScope) return;
-
-    currentScope = scope;
-
-    control.querySelectorAll('button').forEach(b =>
-      b.classList.toggle('active', b === btn)
-    );
-
-    renderFixStats();
-    renderChart();
-  });
-}
-
-function initChartContext() {
-  const canvas = document.getElementById('fix-state-chart');
-  // Make canvas resolution match CSS size
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * window.devicePixelRatio;
-  canvas.height = rect.height * window.devicePixelRatio;
-  chartCtx = canvas.getContext('2d');
-  chartCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
-}
-
-// Note: there is a second renderCurrentFixes below that renders the list view.
-
-function renderAnalysisStats() {
-  if (!metrics || !metrics.analysis) {
-    const merged = document.getElementById('analysis-merged-grid');
-    const open = document.getElementById('analysis-open-grid');
-    if (merged) {
-      merged.innerHTML = '<div class="error">No analysis metrics available.</div>';
+    
+    // Analysis PR Merge Rate
+    const analysisMergeRate = (analysis.openPrs + analysis.mergedPrs + analysis.closedPrs) > 0
+        ? (analysis.mergedPrs / (analysis.openPrs + analysis.mergedPrs + analysis.closedPrs) * 100)
+        : 0;
+    document.getElementById('analysis-merge-rate').textContent = `${analysisMergeRate.toFixed(1)}%`;
+    document.getElementById('analysis-merge-rate').classList.remove('loading');
+    document.getElementById('analysis-merge-label').textContent = `${analysis.mergedPrs} merged of ${analysis.openPrs + analysis.mergedPrs + analysis.closedPrs} total`;
+    document.getElementById('analysis-merge-label').classList.remove('loading');
+    
+    const analysisTrend = document.getElementById('analysis-trend');
+    if (analysisMergeRate >= 70) {
+        analysisTrend.textContent = '✅ Good merge rate';
+        analysisTrend.className = 'trend up';
+    } else {
+        analysisTrend.textContent = '⚠️ Low merge rate';
+        analysisTrend.className = 'trend down';
     }
-    if (open) {
-      open.innerHTML = '';
+}
+
+// Update summary statistics
+function updateSummaryStats(metrics) {
+    document.getElementById('avg-days-to-merge').textContent = 
+        metrics.fixPrs.avgDaysToMerge.toFixed(2);
+    
+    document.getElementById('avg-comments').textContent = 
+        metrics.fixPrs.avgCommentsPerPr.toFixed(1);
+    
+    document.getElementById('avg-commits').textContent = 
+        metrics.fixPrs.avgCommitsPerPr.toFixed(1);
+    
+    document.getElementById('stale-issues').textContent = 
+        metrics.fixIssues.staleCount;
+    
+    // Issues & PRs tab stats
+    document.getElementById('fix-issues-completed').textContent = 
+        metrics.fixIssues.closedCompleted;
+    
+    document.getElementById('fix-issues-not-planned').textContent = 
+        metrics.fixIssues.closedNotPlanned;
+    
+    document.getElementById('prs-review-rounds').textContent = 
+        metrics.fixPrs.reviewRounds;
+    
+    document.getElementById('prs-by-agent').textContent = 
+        metrics.fixPrs.createdByAgent;
+    
+    // Manual metrics (if available)
+    if (manualMetrics.detectionAccuracy !== null) {
+        document.getElementById('detection-accuracy').textContent = 
+            `${manualMetrics.detectionAccuracy.toFixed(1)}%`;
+    } else {
+        document.getElementById('detection-accuracy').textContent = 'N/A';
     }
-    return;
-  }
+    
+    if (manualMetrics.avgQualityScore !== null) {
+        document.getElementById('avg-quality-score').textContent = 
+            `${manualMetrics.avgQualityScore.toFixed(1)}/5`;
+    } else {
+        document.getElementById('avg-quality-score').textContent = 'N/A';
+    }
+    
+    if (manualMetrics.developerSatisfaction !== null) {
+        document.getElementById('dev-satisfaction').textContent = 
+            `${manualMetrics.developerSatisfaction.toFixed(1)}/5`;
+    } else {
+        document.getElementById('dev-satisfaction').textContent = 'N/A';
+    }
+    
+    if (manualMetrics.contextUtilization !== null) {
+        document.getElementById('context-utilization').textContent = 
+            `${manualMetrics.contextUtilization.toFixed(1)}%`;
+    } else {
+        document.getElementById('context-utilization').textContent = 'N/A';
+    }
+}
 
-  const analysis = metrics.analysis;
-
-  const mergedContainer = document.getElementById('analysis-merged-grid');
-  const openContainer = document.getElementById('analysis-open-grid');
-
-  if (mergedContainer) {
-    mergedContainer.innerHTML = '';
-    const mergedCards = [
-      {
-        label: 'Merged Analysis PRs',
-        value: analysis.mergedPrs ?? 0,
-        tooltip: 'Number of analysis PRs merged in the period.',
-      },
-      {
-        label: 'Merged PR %',
-        value: ((analysis.mergedPrPercent ?? 0).toFixed
-          ? analysis.mergedPrPercent.toFixed(1)
-          : Number(analysis.mergedPrPercent || 0).toFixed(1)) + '%',
-        tooltip: 'Share of analysis PRs that have been merged.',
-      },
-      {
-        label: 'Time to Merge PRs',
-        value: (analysis.avgPrDaysToMerge ?? 0).toFixed(2) + ' days',
-        tooltip: 'Average days from analysis PR creation to merge.',
-      },
-      {
-        label: 'Issue Close Time',
-        value: (analysis.avgIssueDaysOpenToClose ?? 0).toFixed(2) + ' days',
-        tooltip: 'Average time to close analysis issues.',
-      },
-    ];
-
-    mergedCards.forEach(card => {
-      const el = document.createElement('div');
-      el.className = 'stat-card';
-
-      const tooltip = document.createElement('div');
-      tooltip.className = 'tooltip';
-      tooltip.textContent = card.tooltip;
-      el.appendChild(tooltip);
-
-      const label = document.createElement('div');
-      label.className = 'stat-label';
-      label.textContent = card.label;
-      el.appendChild(label);
-
-      const value = document.createElement('div');
-      value.className = 'stat-value';
-      value.textContent = card.value;
-      el.appendChild(value);
-
-      mergedContainer.appendChild(el);
+// Create overview chart
+function createOverviewChart(metrics) {
+    if (charts.overview) charts.overview.destroy();
+    
+    const copilotSuccessRate = metrics.fixIssues.assignedToAgent > 0 
+        ? (metrics.fixPrs.createdByAgent / metrics.fixIssues.assignedToAgent * 100) 
+        : 0;
+    
+    const analysisMergeRate = (metrics.analysis.openPrs + metrics.analysis.mergedPrs + metrics.analysis.closedPrs) > 0
+        ? (metrics.analysis.mergedPrs / (metrics.analysis.openPrs + metrics.analysis.mergedPrs + metrics.analysis.closedPrs) * 100)
+        : 0;
+    
+    const ctx = document.getElementById('overviewChart').getContext('2d');
+    charts.overview = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                'Copilot PR\nSuccess Rate',
+                'Analysis PR\nMerge Rate',
+                'Fix PR\nMerge Rate'
+            ],
+            datasets: [{
+                label: 'Current %',
+                data: [
+                    copilotSuccessRate,
+                    analysisMergeRate,
+                    metrics.analysis.mergedPrPercent
+                ],
+                backgroundColor: [
+                    chartColors.primary,
+                    chartColors.secondary,
+                    chartColors.info
+                ],
+                borderWidth: 0
+            }, {
+                label: 'Target %',
+                data: [95, 70, 70],
+                type: 'line',
+                borderColor: chartColors.warning,
+                borderWidth: 2,
+                borderDash: [5, 5],
+                fill: false,
+                pointRadius: 4,
+                pointBackgroundColor: chartColors.warning
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top' },
+                title: {
+                    display: true,
+                    text: 'Key Success Metrics vs. Production Targets',
+                    font: { size: 16 }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Percentage (%)' }
+                }
+            }
+        }
     });
-  }
+}
 
-  if (openContainer) {
-    openContainer.innerHTML = '';
-    const openCards = [
-      {
-        label: 'Open Analysis PRs',
-        value: analysis.openPrs ?? 0,
-        tooltip: 'Number of currently open analysis PRs.',
-      },
-      {
-        label: 'Closed (Not Merged)',
-        value: analysis.closedPrs ?? 0,
-        tooltip: 'Analysis PRs closed without being merged.',
-      },
-      {
-        label: 'Time Since Last PR',
-        value: (analysis.timeSinceLastAnalysisPrDays ?? 0).toFixed(1) + ' days',
-        tooltip: 'Time since the last analysis PR was created.',
-      },
-    ];
-
-    openCards.forEach(card => {
-      const el = document.createElement('div');
-      el.className = 'stat-card';
-
-      const tooltip = document.createElement('div');
-      tooltip.className = 'tooltip';
-      tooltip.textContent = card.tooltip;
-      el.appendChild(tooltip);
-
-      const label = document.createElement('div');
-      label.className = 'stat-label';
-      label.textContent = card.label;
-      el.appendChild(label);
-
-      const value = document.createElement('div');
-      value.className = 'stat-value';
-      value.textContent = card.value;
-      el.appendChild(value);
-
-      openContainer.appendChild(el);
+// Create workflow chart
+function createWorkflowChart(metrics) {
+    if (charts.workflow) charts.workflow.destroy();
+    
+    const workflows = metrics.workflows;
+    
+    const ctx = document.getElementById('workflowChart').getContext('2d');
+    charts.workflow = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                'AI Parity Scan',
+                'Scan Merge',
+                'Issue Creation',
+                'Metrics'
+            ],
+            datasets: [{
+                label: 'Success',
+                data: [
+                    workflows.aiParityScan.success,
+                    workflows.aiParityScanMerge.success,
+                    workflows.aiParityIssueCreation.success,
+                    workflows.aiParityMaintenanceMetrics.success
+                ],
+                backgroundColor: chartColors.success
+            }, {
+                label: 'Failure',
+                data: [
+                    workflows.aiParityScan.failure,
+                    workflows.aiParityScanMerge.failure,
+                    workflows.aiParityIssueCreation.failure,
+                    workflows.aiParityMaintenanceMetrics.failure
+                ],
+                backgroundColor: chartColors.danger
+            }, {
+                label: 'Cancelled',
+                data: [
+                    workflows.aiParityScan.cancelled,
+                    workflows.aiParityScanMerge.cancelled,
+                    workflows.aiParityIssueCreation.cancelled,
+                    workflows.aiParityMaintenanceMetrics.cancelled
+                ],
+                backgroundColor: chartColors.warning
+            }, {
+                label: 'Skipped',
+                data: [
+                    workflows.aiParityScan.skipped,
+                    workflows.aiParityScanMerge.skipped,
+                    workflows.aiParityIssueCreation.skipped,
+                    workflows.aiParityMaintenanceMetrics.skipped
+                ],
+                backgroundColor: '#6c757d'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top' },
+                title: {
+                    display: true,
+                    text: 'Workflow Runs Status (Last 7 Days)',
+                    font: { size: 16 }
+                },
+                tooltip: {
+                    callbacks: {
+                        footer: function(tooltipItems) {
+                            const index = tooltipItems[0].dataIndex;
+                            const workflowNames = ['aiParityScan', 'aiParityScanMerge', 'aiParityIssueCreation', 'aiParityMaintenanceMetrics'];
+                            const workflow = workflows[workflowNames[index]];
+                            return `Success Rate: ${workflow.successRate.toFixed(1)}%\nAvg Duration: ${workflow.avgDurationSeconds.toFixed(1)}s`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { stacked: true },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: { display: true, text: 'Number of Runs' }
+                }
+            }
+        }
     });
-  }
 }
 
-function aggregateWorkflows() {
-  if (!metrics || !metrics.workflows) return null;
-  const workflows = metrics.workflows;
-  const keys = Object.keys(workflows);
-  if (!keys.length) return null;
-
-  const agg = {
-    totalRuns: 0,
-    success: 0,
-    failure: 0,
-    skipped: 0,
-    cancelled: 0,
-  };
-
-  keys.forEach(k => {
-    const w = workflows[k];
-    agg.totalRuns += w.totalRuns ?? 0;
-    agg.success += w.success ?? 0;
-    agg.failure += w.failure ?? 0;
-    agg.skipped += w.skipped ?? 0;
-    agg.cancelled += w.cancelled ?? 0;
-  });
-
-  agg.successRate = agg.totalRuns ? (agg.success / agg.totalRuns) * 100 : 0;
-  return agg;
-}
-
-function getWorkflowMetrics(key) {
-  if (!metrics || !metrics.workflows) return null;
-  if (key === 'all') {
-    return aggregateWorkflows();
-  }
-  const w = metrics.workflows[key];
-  if (!w) return null;
-  return {
-    totalRuns: w.totalRuns ?? 0,
-    success: w.success ?? 0,
-    failure: w.failure ?? 0,
-    skipped: w.skipped ?? 0,
-    cancelled: w.cancelled ?? 0,
-    successRate: w.successRate ?? (w.totalRuns ? (w.success / w.totalRuns) * 100 : 0),
-  };
-}
-
-function renderWorkflowStats(currentWorkflowKey) {
-  const container = document.getElementById('workflow-stats-grid');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const data = getWorkflowMetrics(currentWorkflowKey);
-  if (!data) {
-    container.innerHTML = '<div class="error">No workflow metrics available.</div>';
-    return;
-  }
-
-  const cards = [
-    {
-      label: 'Success Rate',
-      value: (data.successRate ?? 0).toFixed(1) + '%',
-      tooltip: 'Percentage of workflow runs that completed successfully.',
-    },
-    {
-      label: 'Successful Runs',
-      value: data.success ?? 0,
-      tooltip: 'Number of successful workflow runs in the period.',
-    },
-    {
-      label: 'Total Runs',
-      value: data.totalRuns ?? 0,
-      tooltip: 'Total number of workflow runs in the period.',
-    },
-    {
-      label: 'Failed Runs',
-      value: data.failure ?? 0,
-      tooltip: 'Number of workflow runs that failed.',
-    },
-    {
-      label: 'Skipped Runs',
-      value: data.skipped ?? 0,
-      tooltip: 'Number of workflow runs that were skipped.',
-    },
-    {
-      label: 'Cancelled Runs',
-      value: data.cancelled ?? 0,
-      tooltip: 'Number of workflow runs that were cancelled.',
-    },
-  ];
-
-  cards.forEach(card => {
-    const el = document.createElement('div');
-    el.className = 'stat-card';
-
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tooltip';
-    tooltip.textContent = card.tooltip;
-    el.appendChild(tooltip);
-
-    const label = document.createElement('div');
-    label.className = 'stat-label';
-    label.textContent = card.label;
-    el.appendChild(label);
-
-    const value = document.createElement('div');
-    value.className = 'stat-value';
-    value.textContent = card.value;
-    el.appendChild(value);
-
-    container.appendChild(el);
-  });
-}
-
-// Current Fixes list rendering has been removed for now per design.
-
-function setupWorkflowSwitcher() {
-  const control = document.getElementById('workflow-segment-control');
-  if (!control) return;
-
-  let currentWorkflowKey = 'all';
-
-  control.addEventListener('click', e => {
-    const btn = e.target.closest('button[data-workflow]');
-    if (!btn) return;
-    const key = btn.dataset.workflow;
-    if (!key || key === currentWorkflowKey) return;
-
-    currentWorkflowKey = key;
-
-    control.querySelectorAll('button').forEach(b => {
-      b.classList.toggle('active', b === btn);
+// Create quality chart (manual data)
+function createQualityChart(metrics) {
+    if (charts.quality) charts.quality.destroy();
+    
+    const hasManualData = manualMetrics.qualityDistribution.some(val => val > 0);
+    
+    const ctx = document.getElementById('qualityChart').getContext('2d');
+    charts.quality = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: [
+                'Excellent (5)',
+                'Good (4)',
+                'Acceptable (3)',
+                'Needs Work (2)',
+                'Poor (1)'
+            ],
+            datasets: [{
+                data: hasManualData ? manualMetrics.qualityDistribution : [1, 1, 1, 1, 1],
+                backgroundColor: [
+                    chartColors.success,
+                    chartColors.info,
+                    chartColors.warning,
+                    '#fd7e14',
+                    chartColors.danger
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right' },
+                title: {
+                    display: true,
+                    text: hasManualData ? 'Implementation Quality Score Distribution' : 'Implementation Quality Score Distribution (Placeholder)',
+                    font: { size: 16 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            if (!hasManualData) return 'No data - Requires manual review';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${context.label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
     });
-
-    renderWorkflowStats(currentWorkflowKey);
-  });
-
-  renderWorkflowStats(currentWorkflowKey);
 }
 
-window.addEventListener('load', async () => {
-  try {
-    metrics = await loadMetrics();
-    initChartContext();
-    setupScopeSwitcher();
-    setupWorkflowSwitcher();
-    renderGeneratedAt();
-    renderFixStats();
-    renderChart();
-    renderAnalysisStats();
-  } catch (err) {
-    console.error(err);
-    const grid = document.getElementById('fix-stats-grid');
-    grid.innerHTML =
-      '<div class="error">Failed to load metrics. Check that parity-metrics.json is present and accessible.</div>';
-  }
-});
+// Create issues & PRs chart
+function createIssuesPrsChart(metrics) {
+    if (charts.issuesPrs) charts.issuesPrs.destroy();
+    
+    const ctx = document.getElementById('issuesPrsChart').getContext('2d');
+    charts.issuesPrs = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Fix Issues', 'Fix PRs', 'Analysis PRs'],
+            datasets: [{
+                label: 'Open',
+                data: [
+                    metrics.fixIssues.open,
+                    metrics.fixPrs.open,
+                    metrics.analysis.openPrs
+                ],
+                backgroundColor: chartColors.info
+            }, {
+                label: 'Closed/Not Merged',
+                data: [
+                    metrics.fixIssues.closed,
+                    metrics.fixPrs.closedNotMerged,
+                    metrics.analysis.closedPrs
+                ],
+                backgroundColor: chartColors.warning
+            }, {
+                label: 'Merged',
+                data: [
+                    0, // Issues don't get merged
+                    metrics.fixPrs.merged,
+                    metrics.analysis.mergedPrs
+                ],
+                backgroundColor: chartColors.success
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top' },
+                title: {
+                    display: true,
+                    text: 'Issues & PRs Status Breakdown',
+                    font: { size: 16 }
+                }
+            },
+            scales: {
+                x: { stacked: true },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: { display: true, text: 'Count' }
+                }
+            }
+        }
+    });
+}
 
-window.addEventListener('resize', () => {
-  if (!chartCtx) return;
-  initChartContext();
-  renderChart();
+// Create analysis chart
+function createAnalysisChart(metrics) {
+    if (charts.analysis) charts.analysis.destroy();
+    
+    const analysis = metrics.analysis;
+    
+    const ctx = document.getElementById('analysisChart').getContext('2d');
+    charts.analysis = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                'Average Days\nto Merge',
+                'Average Days Issue\nOpen to Close',
+                'Days Since Last\nAnalysis PR',
+                'Days Since Last\nAnalysis Issue'
+            ],
+            datasets: [{
+                label: 'Days',
+                data: [
+                    analysis.avgPrDaysToMerge,
+                    analysis.avgIssueDaysOpenToClose,
+                    analysis.timeSinceLastAnalysisPrDays,
+                    analysis.timeSinceLastAnalysisIssueDays
+                ],
+                backgroundColor: [
+                    chartColors.primary,
+                    chartColors.secondary,
+                    chartColors.info,
+                    chartColors.warning
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: 'Analysis Pipeline Time Metrics',
+                    font: { size: 16 }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Days' }
+                }
+            }
+        }
+    });
+}
+
+// Update production criteria
+function updateProductionCriteria(metrics) {
+    const copilotSuccessRate = metrics.fixIssues.assignedToAgent > 0 
+        ? (metrics.fixPrs.createdByAgent / metrics.fixIssues.assignedToAgent * 100) 
+        : 0;
+    
+    // Calculate overall workflow failure rate
+    const workflows = metrics.workflows;
+    const totalRuns = workflows.aiParityScan.totalRuns + 
+                     workflows.aiParityScanMerge.totalRuns + 
+                     workflows.aiParityIssueCreation.totalRuns + 
+                     workflows.aiParityMaintenanceMetrics.totalRuns;
+    const totalFailures = workflows.aiParityScan.failure + 
+                         workflows.aiParityScanMerge.failure + 
+                         workflows.aiParityIssueCreation.failure + 
+                         workflows.aiParityMaintenanceMetrics.failure;
+    const overallFailureRate = totalRuns > 0 ? (totalFailures / totalRuns * 100) : 0;
+    
+    document.getElementById('criteria-pr-success').textContent = `${copilotSuccessRate.toFixed(1)}%`;
+    document.getElementById('criteria-failure-rate').textContent = `${overallFailureRate.toFixed(1)}%`;
+    
+    // Update criteria status
+    const criteriaList = document.getElementById('criteria-list');
+    const items = criteriaList.querySelectorAll('li');
+    
+    // PR Success Rate
+    if (copilotSuccessRate >= 95) {
+        items[0].className = 'met';
+        items[0].querySelector('.status-indicator').className = 'status-indicator success';
+    } else {
+        items[0].className = 'not-met';
+        items[0].querySelector('.status-indicator').className = 'status-indicator danger';
+    }
+    
+    // Workflow Failure Rate
+    if (overallFailureRate < 2) {
+        items[1].className = 'met';
+        items[1].querySelector('.status-indicator').className = 'status-indicator success';
+    } else {
+        items[1].className = 'not-met';
+        items[1].querySelector('.status-indicator').className = 'status-indicator danger';
+    }
+    
+    // Manual metrics remain pending until data is provided
+    // Detection Accuracy, Quality Score, Dev Satisfaction, False Positive Rate stay as pending/warning
+}
+
+// Update footer with timestamp
+function updateFooter(metrics) {
+    const date = new Date(metrics.generatedAt);
+    const formatted = date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short'
+    });
+    
+    document.getElementById('last-updated').textContent = formatted;
+    document.getElementById('last-updated').classList.remove('loading');
+}
+
+// Show error message
+function showError(message) {
+    const container = document.querySelector('.container');
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.innerHTML = `<strong>Error:</strong> ${message}`;
+    container.insertBefore(errorDiv, container.firstChild.nextSibling);
+}
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Initializing AI Parity Metrics Dashboard...');
+    loadMetrics();
 });
