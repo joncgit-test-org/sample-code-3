@@ -164,44 +164,32 @@ function updateSummaryStats(metrics) {
         metrics.fixPrs.createdByAgent;
     
     // Manual metrics (if available)
-    const detectionAccuracyEl = document.getElementById('detection-accuracy');
-    if (detectionAccuracyEl) {
-        if (manualMetrics.detectionAccuracy !== null) {
-            detectionAccuracyEl.textContent = 
-                `${manualMetrics.detectionAccuracy.toFixed(1)}%`;
-        } else {
-            detectionAccuracyEl.textContent = 'N/A';
-        }
+    if (manualMetrics.detectionAccuracy !== null) {
+        document.getElementById('detection-accuracy').textContent = 
+            `${manualMetrics.detectionAccuracy.toFixed(1)}%`;
+    } else {
+        document.getElementById('detection-accuracy').textContent = 'N/A';
     }
     
-    const avgQualityScoreEl = document.getElementById('avg-quality-score');
-    if (avgQualityScoreEl) {
-        if (manualMetrics.avgQualityScore !== null) {
-            avgQualityScoreEl.textContent = 
-                `${manualMetrics.avgQualityScore.toFixed(1)}/5`;
-        } else {
-            avgQualityScoreEl.textContent = 'N/A';
-        }
+    if (manualMetrics.avgQualityScore !== null) {
+        document.getElementById('avg-quality-score').textContent = 
+            `${manualMetrics.avgQualityScore.toFixed(1)}/5`;
+    } else {
+        document.getElementById('avg-quality-score').textContent = 'N/A';
     }
     
-    const devSatisfactionEl = document.getElementById('dev-satisfaction');
-    if (devSatisfactionEl) {
-        if (manualMetrics.developerSatisfaction !== null) {
-            devSatisfactionEl.textContent = 
-                `${manualMetrics.developerSatisfaction.toFixed(1)}/5`;
-        } else {
-            devSatisfactionEl.textContent = 'N/A';
-        }
+    if (manualMetrics.developerSatisfaction !== null) {
+        document.getElementById('dev-satisfaction').textContent = 
+            `${manualMetrics.developerSatisfaction.toFixed(1)}/5`;
+    } else {
+        document.getElementById('dev-satisfaction').textContent = 'N/A';
     }
     
-    const contextUtilizationEl = document.getElementById('context-utilization');
-    if (contextUtilizationEl) {
-        if (manualMetrics.contextUtilization !== null) {
-            contextUtilizationEl.textContent = 
-                `${manualMetrics.contextUtilization.toFixed(1)}%`;
-        } else {
-            contextUtilizationEl.textContent = 'N/A';
-        }
+    if (manualMetrics.contextUtilization !== null) {
+        document.getElementById('context-utilization').textContent = 
+            `${manualMetrics.contextUtilization.toFixed(1)}%`;
+    } else {
+        document.getElementById('context-utilization').textContent = 'N/A';
     }
 }
 
