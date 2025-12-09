@@ -163,19 +163,6 @@ function updateSummaryStats(metrics) {
     document.getElementById('prs-by-agent').textContent = 
         metrics.fixPrs.createdByAgent;
     
-    // Analysis Issues stats
-    document.getElementById('analysis-issues-open').textContent = 
-        metrics.analysis.openIssues;
-    
-    document.getElementById('analysis-issues-closed').textContent = 
-        metrics.analysis.closedIssues;
-    
-    document.getElementById('analysis-avg-issue-days').textContent = 
-        metrics.analysis.avgIssueDaysOpenToClose.toFixed(1);
-    
-    document.getElementById('analysis-last-issue-days').textContent = 
-        metrics.analysis.timeSinceLastAnalysisIssueDays.toFixed(1);
-    
     // Manual metrics (if available)
     if (manualMetrics.detectionAccuracy !== null) {
         document.getElementById('detection-accuracy').textContent = 
@@ -434,12 +421,13 @@ function createIssuesPrsChart(metrics) {
     charts.issuesPrs = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Fix Issues', 'Fix PRs', 'Analysis PRs'],
+            labels: ['Fix Issues', 'Fix PRs', 'Analysis Issues', 'Analysis PRs'],
             datasets: [{
                 label: 'Open',
                 data: [
                     metrics.fixIssues.open,
                     metrics.fixPrs.open,
+                    metrics.analysis.openIssues,
                     metrics.analysis.openPrs
                 ],
                 backgroundColor: chartColors.info
@@ -448,6 +436,7 @@ function createIssuesPrsChart(metrics) {
                 data: [
                     metrics.fixIssues.closed,
                     metrics.fixPrs.closedNotMerged,
+                    metrics.analysis.closedIssues,
                     metrics.analysis.closedPrs
                 ],
                 backgroundColor: chartColors.warning
@@ -456,6 +445,7 @@ function createIssuesPrsChart(metrics) {
                 data: [
                     0, // Issues don't get merged
                     metrics.fixPrs.merged,
+                    0, // Issues don't get merged
                     metrics.analysis.mergedPrs
                 ],
                 backgroundColor: chartColors.success

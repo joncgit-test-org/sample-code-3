@@ -459,11 +459,11 @@
                 <div class="summary-stats">
                     <div class="summary-stat">
                         <div class="value" id="fix-issues-completed">-</div>
-                        <div class="label">Fix Issues Closed (Completed)</div>
+                        <div class="label">Issues Closed (Completed)</div>
                     </div>
                     <div class="summary-stat">
                         <div class="value" id="fix-issues-not-planned">-</div>
-                        <div class="label">Fix Issues Closed (Not Planned)</div>
+                        <div class="label">Issues Closed (Not Planned)</div>
                     </div>
                     <div class="summary-stat">
                         <div class="value" id="prs-review-rounds">-</div>
@@ -473,25 +473,17 @@
                         <div class="value" id="prs-by-agent">-</div>
                         <div class="label">PRs Created by Agent</div>
                     </div>
-                    <div class="summary-stat">
-                        <div class="value" id="analysis-issues-open">-</div>
-                        <div class="label">Analysis Issues (Open)</div>
-                    </div>
-                    <div class="summary-stat">
-                        <div class="value" id="analysis-issues-closed">-</div>
-                        <div class="label">Analysis Issues (Closed)</div>
-                    </div>
-                    <div class="summary-stat">
-                        <div class="value" id="analysis-avg-issue-days">-</div>
-                        <div class="label">Avg Days Issue Open to Close</div>
-                    </div>
-                    <div class="summary-stat">
-                        <div class="value" id="analysis-last-issue-days">-</div>
-                        <div class="label">Days Since Last Analysis Issue</div>
-                    </div>
                 </div>
                 <div class="chart-wrapper">
                     <canvas id="issuesPrsChart"></canvas>
+                </div>
+            </div>
+
+            <div id="analysis-pipeline" class="tab-content">
+                <h2>Analysis Pipeline Performance</h2>
+                <p style="margin-bottom: 20px; color: #666;">Tracking "[AI First Parity Analysis]" PRs and their outcomes</p>
+                <div class="chart-wrapper">
+                    <canvas id="analysisChart"></canvas>
                 </div>
             </div>
         </div>
@@ -526,15 +518,6 @@
                     <span><strong>📝 False Positive Rate:</strong> < 5% (Requires label analysis)</span>
                 </li>
             </ul>
-        </div>
-
-            <div id="analysis-pipeline" class="tab-content">
-                <h2>Analysis Pipeline Performance</h2>
-                <p style="margin-bottom: 20px; color: #666;">Tracking "[AI First Parity Analysis]" PRs and their outcomes</p>
-                <div class="chart-wrapper">
-                    <canvas id="analysisChart"></canvas>
-                </div>
-            </div>
         </div>
 
         <footer>
