@@ -108,16 +108,14 @@ function updateVolumeMetrics(metrics) {
         fixMergeTrend.className = 'trend down';
     }
     
-    // Analysis Issues & PRs
+    // Analysis PRs
     const totalAnalysisPrs = analysis.openPrs + analysis.mergedPrs + analysis.closedPrs;
-    const totalAnalysisIssues = analysis.openIssues + analysis.closedIssues;
-    const totalAnalysisItems = totalAnalysisPrs + totalAnalysisIssues;
-    document.getElementById('analysis-total').textContent = totalAnalysisItems;
-    document.getElementById('analysis-total').classList.remove('loading');
-    document.getElementById('analysis-issues').textContent = totalAnalysisIssues;
-    document.getElementById('analysis-issues').classList.remove('loading');
     document.getElementById('analysis-prs').textContent = totalAnalysisPrs;
-    document.getElementById('analysis-prs').classList.remove('loading')
+    document.getElementById('analysis-prs').classList.remove('loading');
+    document.getElementById('analysis-open-prs').textContent = analysis.openPrs;
+    document.getElementById('analysis-open-prs').classList.remove('loading');
+    document.getElementById('analysis-merged-prs').textContent = analysis.mergedPrs;
+    document.getElementById('analysis-merged-prs').classList.remove('loading')
     
     // Analysis PR Merge Rate
     const analysisMergeRate = (analysis.openPrs + analysis.mergedPrs + analysis.closedPrs) > 0
@@ -164,6 +162,19 @@ function updateSummaryStats(metrics) {
     
     document.getElementById('prs-by-agent').textContent = 
         metrics.fixPrs.createdByAgent;
+    
+    // Analysis Issues stats
+    document.getElementById('analysis-issues-open').textContent = 
+        metrics.analysis.openIssues;
+    
+    document.getElementById('analysis-issues-closed').textContent = 
+        metrics.analysis.closedIssues;
+    
+    document.getElementById('analysis-avg-issue-days').textContent = 
+        metrics.analysis.avgIssueDaysOpenToClose.toFixed(1);
+    
+    document.getElementById('analysis-last-issue-days').textContent = 
+        metrics.analysis.timeSinceLastAnalysisIssueDays.toFixed(1);
     
     // Manual metrics (if available)
     if (manualMetrics.detectionAccuracy !== null) {
