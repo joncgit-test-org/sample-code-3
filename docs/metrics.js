@@ -429,6 +429,9 @@ function updateDashboard(metrics) {
     // Update time range info
     updateTimeRangeInfo();
     
+    // Update metric card titles based on current language
+    updateMetricTitles(currentLanguage);
+    
     // Update volume metrics
     updateVolumeMetrics(metrics);
     
@@ -461,9 +464,35 @@ function switchLanguage(language) {
     });
     event.target.classList.add('active');
     
+    // Update metric card titles based on language
+    updateMetricTitles(language);
+    
     // Refresh dashboard with filtered data
     if (metricsData) {
-        updateDashboard(metricsData);
+        updateDashboard(getActiveMetrics());
+    }
+}
+
+// Update metric card titles based on selected language
+function updateMetricTitles(language) {
+    const languageNames = {
+        'all': '',
+        'python': 'Python ',
+        'nodejs': 'Node.js ',
+        'dotnet': '.NET '
+    };
+    
+    const prefix = languageNames[language] || '';
+    
+    const fixPrsTitleEl = document.getElementById('total-fix-prs-title');
+    const fixMergeRateTitleEl = document.getElementById('fix-merge-rate-title');
+    
+    if (fixPrsTitleEl) {
+        fixPrsTitleEl.textContent = prefix ? `Total ${prefix}Fix PRs` : 'Total Fix PRs';
+    }
+    
+    if (fixMergeRateTitleEl) {
+        fixMergeRateTitleEl.textContent = prefix ? `${prefix}Fix PR Merge Rate` : 'Fix PR Merge Rate';
     }
 }
 

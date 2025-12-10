@@ -427,6 +427,15 @@
             font-style: italic;
             margin-left: auto;
         }
+
+        .header-time-range {
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .header-time-range .time-range-info {
+            margin-left: 15px;
+        }
     </style>
 </head>
 <body>
@@ -434,6 +443,20 @@
         <header>
             <h1>🤖 AI Parity Workflow Metrics Dashboard</h1>
             <p class="subtitle" id="dashboard-subtitle">Real-time metrics for SDK parity automation across Python, TypeScript, and C#</p>
+            
+            <!-- Time Range Filter -->
+            <div class="time-range-container header-time-range">
+                <span class="time-range-label">Time Range:</span>
+                <div class="time-range-buttons">
+                    <button class="time-range-btn active" onclick="switchTimeRange('week')">
+                        Last Week
+                    </button>
+                    <button class="time-range-btn" onclick="switchTimeRange('month')">
+                        Last Month
+                    </button>
+                </div>
+                <span class="time-range-info" id="time-range-info"></span>
+            </div>
         </header>
 
         <!-- Key Volume Metrics -->
@@ -442,7 +465,7 @@
                 <div class="metric-tooltip">
                     Total number of "[AI First Parity]" PRs (fix PRs) that have been opened, closed, or merged in the last 7 days.
                 </div>
-                <h3>Total Fix PRs</h3>
+                <h3 id="total-fix-prs-title">Total Fix PRs</h3>
                 <div class="metric-value loading" id="total-fix-prs">-</div>
                 <div class="metric-label">Open: <span id="open-fix-prs" class="loading">-</span> | Merged: <span id="merged-fix-prs" class="loading">-</span></div>
                 <div class="trend neutral" id="fix-prs-trend">Tracking last 7 days</div>
@@ -452,7 +475,7 @@
                 <div class="metric-tooltip">
                     Percentage of fix PRs that were successfully merged. Indicates the completion rate of parity fixes.
                 </div>
-                <h3>Fix PR Merge Rate</h3>
+                <h3 id="fix-merge-rate-title">Fix PR Merge Rate</h3>
                 <div class="metric-value loading" id="fix-merge-rate">-</div>
                 <div class="metric-label loading" id="fix-merge-label">- merged of - total</div>
                 <div class="trend neutral" id="fix-merge-trend">Calculating...</div>
@@ -491,20 +514,6 @@
 
             <div id="overview" class="tab-content active">
                 <h2>Automated Metrics Overview</h2>
-                
-                <!-- Time Range Filter -->
-                <div class="time-range-container">
-                    <span class="time-range-label">Time Range:</span>
-                    <div class="time-range-buttons">
-                        <button class="time-range-btn active" onclick="switchTimeRange('week')">
-                            Last Week
-                        </button>
-                        <button class="time-range-btn" onclick="switchTimeRange('month')">
-                            Last Month
-                        </button>
-                    </div>
-                    <span class="time-range-info" id="time-range-info"></span>
-                </div>
                 
                 <!-- Language Filter -->
                 <div class="language-filter-container">
