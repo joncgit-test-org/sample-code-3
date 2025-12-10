@@ -22,6 +22,7 @@ const chartColors = {
 
 let charts = {};
 let metricsData = null;
+let currentLanguage = 'all'; // Track currently selected language
 
 // Manual metrics data (to be updated based on evaluations)
 const manualMetrics = {
@@ -33,19 +34,122 @@ const manualMetrics = {
     falsePositiveRate: null // % (target: < 5)
 };
 
-// Load metrics from parity-metrics.json
+// Aggregate metrics from language-specific data
+function aggregateMetrics(metrics) {
+    const languages = ['python', 'nodejs', 'dotnet'];
+    const aggregated = {
+        fixPrs: {
+            total: 0,
+            open: 0,
+            closedNotMerged: 0,
+            merged: 0,
+            createdByAgent: 0,
+            reviewRounds: 0,
+            avgCommentsPerPr: 0,
+            avgCommitsPerPr: 0,
+            avgDaysToMerge: 0,
+            avgOpenPrAgeDays: 0
+        },
+        fixIssues: {
+            open: 0,
+            closed: 0,
+            assignedToAgent: 0,
+            closedCompleted: 0,
+            closedNotPlanned: 0,
+            staleCount: 0,
+            avgOpenIssueAgeDays: 0
+        }
+    };
+
+    let totalMerged = 0;
+    let totalOpen = 0;
+    let sumAvgDaysToMerge = 0;
+    let sumAvgOpenPrAge = 0;
+    let sumAvgOpenIssueAge = 0;
+    let sumAvgComments = 0;
+    let sumAvgCommits = 0;
+
+    languages.forEach(lang => {
+        const prKey = `${lang}FixPrs`;
+        const issueKey = `${lang}FixIssues`;
+        
+        if (metrics[prKey]) {
+            aggregated.fixPrs.total += metrics[prKey].total || 0;
+            aggregated.fixPrs.open += metrics[prKey].open || 0;
+            aggregated.fixPrs.closedNotMerged += metrics[prKey].closedNotMerged || 0;
+            aggregated.fixPrs.merged += metrics[prKey].merged || 0;
+            aggregated.fixPrs.createdByAgent += metrics[prKey].createdByAgent || 0;
+            aggregated.fixPrs.reviewRounds += metrics[prKey].reviewRounds || 0;
+            
+            if (metrics[prKey].merged > 0) {
+                totalMerged += metrics[prKey].merged;
+                sumAvgDaysToMerge += (metrics[prKey].avgDaysToMerge || 0) * metrics[prKey].merged;
+                sumAvgComments += (metrics[prKey].avgCommentsPerPr || 0) * metrics[prKey].merged;
+                sumAvgCommits += (metrics[prKey].avgCommitsPerPr || 0) * metrics[prKey].merged;
+            }
+            
+            if (metrics[prKey].open > 0) {
+                totalOpen += metrics[prKey].open;
+                sumAvgOpenPrAge += (metrics[prKey].avgOpenPrAgeDays || 0) * metrics[prKey].open;
+            }
+        }
+        
+        if (metrics[issueKey]) {
+            aggregated.fixIssues.open += metrics[issueKey].open || 0;
+            aggregated.fixIssues.closed += metrics[issueKey].closed || 0;
+            aggregated.fixIssues.assignedToAgent += metrics[issueKey].assignedToAgent || 0;
+            aggregated.fixIssues.closedCompleted += metrics[issueKey].closedCompleted || 0;
+            aggregated.fixIssues.closedNotPlanned += metrics[issueKey].closedNotPlanned || 0;
+            aggregated.fixIssues.staleCount += metrics[issueKey].staleCount || 0;
+            
+            if (metrics[issueKey].open > 0) {
+                sumAvgOpenIssueAge += (metrics[issueKey].avgOpenIssueAgeDays || 0) * metrics[issueKey].open;
+            }
+        }
+    });
+
+    // Calculate weighted averages
+    aggregated.fixPrs.avgDaysToMerge = totalMerged > 0 ? sumAvgDaysToMerge / totalMerged : 0;
+    aggregated.fixPrs.avgCommentsPerPr = totalMerged > 0 ? sumAvgComments / totalMerged : 0;
+    aggregated.fixPrs.avgCommitsPerPr = totalMerged > 0 ? sumAvgCommits / totalMerged : 0;
+    aggregated.fixPrs.avgOpenPrAgeDays = totalOpen > 0 ? sumAvgOpenPrAge / totalOpen : 0;
+    aggregated.fixIssues.avgOpenIssueAgeDays = aggregated.fixIssues.open > 0 ? sumAvgOpenIssueAge / aggregated.fixIssues.open : 0;
+
+    return aggregated;
+}
+
+// Get metrics for the selected language
+function getLanguageMetrics(metrics, language) {
+    if (language === 'all') {
+        return aggregateMetrics(metrics);
+    }
+    
+    const prKey = `${language}FixPrs`;
+    const issueKey = `${language}FixIssues`;
+    
+    return {
+        fixPrs: metrics[prKey] || {},
+        fixIssues: metrics[issueKey] || {}
+    };
+}
+
+// Load metrics from parity-metrics-latest.json
 async function loadMetrics() {
     try {
-        const response = await fetch('parity-metrics.json');
+        let response = await fetch('parity-metrics-latest.json');
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            console.warn('⚠️ parity-metrics-latest.json not found, trying dummy-metrics.json...');
+            response = await fetch('dummy-metrics.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
         }
         metricsData = await response.json();
         console.log('✅ Metrics loaded successfully');
         updateDashboard(metricsData);
     } catch (error) {
         console.error('❌ Error loading metrics:', error);
-        showError('Failed to load metrics data. Please ensure parity-metrics.json is accessible.');
+        showError('Failed to load metrics data. Please ensure the metrics JSON file is accessible.');
     }
 }
 
@@ -75,14 +179,31 @@ function updateDashboard(metrics) {
     console.log('✅ Dashboard updated successfully');
 }
 
+// Switch language filter
+function switchLanguage(language) {
+    currentLanguage = language;
+    
+    // Update button states
+    document.querySelectorAll('.language-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Refresh dashboard with filtered data
+    if (metricsData) {
+        updateDashboard(metricsData);
+    }
+}
+
 // Update volume metric cards
 function updateVolumeMetrics(metrics) {
-    const fixPrs = metrics.fixPrs;
-    const fixIssues = metrics.fixIssues;
+    const langMetrics = getLanguageMetrics(metrics, currentLanguage);
+    const fixPrs = langMetrics.fixPrs;
+    const fixIssues = langMetrics.fixIssues;
     const analysis = metrics.analysis;
     
     // Total Fix PRs
-    const totalFixPrs = fixPrs.total;
+    const totalFixPrs = fixPrs.total || 0;
     document.getElementById('total-fix-prs').textContent = totalFixPrs;
     document.getElementById('total-fix-prs').classList.remove('loading');
     document.getElementById('open-fix-prs').textContent = fixPrs.open;
@@ -138,30 +259,32 @@ function updateVolumeMetrics(metrics) {
 
 // Update summary statistics
 function updateSummaryStats(metrics) {
+    const langMetrics = getLanguageMetrics(metrics, currentLanguage);
+    
     document.getElementById('avg-days-to-merge').textContent = 
-        metrics.fixPrs.avgDaysToMerge.toFixed(2);
+        (langMetrics.fixPrs.avgDaysToMerge || 0).toFixed(2);
     
     document.getElementById('avg-comments').textContent = 
-        metrics.fixPrs.avgCommentsPerPr.toFixed(1);
+        (langMetrics.fixPrs.avgCommentsPerPr || 0).toFixed(1);
     
     document.getElementById('avg-review-rounds').textContent = 
-        metrics.fixPrs.reviewRounds
+        langMetrics.fixPrs.reviewRounds || 0;
     
     document.getElementById('stale-issues').textContent = 
-        metrics.fixIssues.staleCount;
+        langMetrics.fixIssues.staleCount || 0;
     
     // Issues & PRs tab stats
     document.getElementById('fix-issues-completed').textContent = 
-        metrics.fixIssues.closedCompleted;
+        langMetrics.fixIssues.closedCompleted || 0;
     
     document.getElementById('fix-issues-not-planned').textContent = 
-        metrics.fixIssues.closedNotPlanned;
+        langMetrics.fixIssues.closedNotPlanned || 0;
     
     document.getElementById('prs-review-rounds').textContent = 
-        metrics.fixPrs.reviewRounds;
+        langMetrics.fixPrs.reviewRounds || 0;
     
     document.getElementById('prs-by-agent').textContent = 
-        metrics.fixPrs.createdByAgent;
+        langMetrics.fixPrs.createdByAgent || 0;
     
     // Manual metrics (if available)
     if (manualMetrics.detectionAccuracy !== null) {
@@ -197,12 +320,14 @@ function updateSummaryStats(metrics) {
 function createOverviewChart(metrics) {
     if (charts.overview) charts.overview.destroy();
     
-    const copilotSuccessRate = metrics.fixIssues.assignedToAgent > 0 
-        ? (metrics.fixPrs.createdByAgent / metrics.fixIssues.assignedToAgent * 100) 
+    const langMetrics = getLanguageMetrics(metrics, currentLanguage);
+    
+    const copilotSuccessRate = langMetrics.fixIssues.assignedToAgent > 0 
+        ? ((langMetrics.fixPrs.createdByAgent || 0) / langMetrics.fixIssues.assignedToAgent * 100) 
         : 0;
     
-    const fixMergeRate = metrics.fixPrs.total > 0
-        ? (metrics.fixPrs.merged / metrics.fixPrs.total * 100)
+    const fixMergeRate = (langMetrics.fixPrs.total || 0) > 0
+        ? ((langMetrics.fixPrs.merged || 0) / langMetrics.fixPrs.total * 100)
         : 0;
     
     const analysisMergeRate = (metrics.analysis.openPrs + metrics.analysis.mergedPrs + metrics.analysis.closedPrs) > 0
@@ -417,6 +542,8 @@ function createQualityChart(metrics) {
 function createIssuesPrsChart(metrics) {
     if (charts.issuesPrs) charts.issuesPrs.destroy();
     
+    const langMetrics = getLanguageMetrics(metrics, currentLanguage);
+    
     const ctx = document.getElementById('issuesPrsChart').getContext('2d');
     charts.issuesPrs = new Chart(ctx, {
         type: 'bar',
@@ -425,28 +552,28 @@ function createIssuesPrsChart(metrics) {
             datasets: [{
                 label: 'Open',
                 data: [
-                    metrics.fixIssues.open,
-                    metrics.fixPrs.open,
-                    metrics.analysis.openIssues,
-                    metrics.analysis.openPrs
+                    langMetrics.fixIssues.open || 0,
+                    langMetrics.fixPrs.open || 0,
+                    metrics.analysis.openIssues || 0,
+                    metrics.analysis.openPrs || 0
                 ],
                 backgroundColor: chartColors.info
             }, {
                 label: 'Closed/Not Merged',
                 data: [
-                    metrics.fixIssues.closed,
-                    metrics.fixPrs.closedNotMerged,
-                    metrics.analysis.closedIssues,
-                    metrics.analysis.closedPrs
+                    langMetrics.fixIssues.closed || 0,
+                    langMetrics.fixPrs.closedNotMerged || 0,
+                    metrics.analysis.closedIssues || 0,
+                    metrics.analysis.closedPrs || 0
                 ],
                 backgroundColor: chartColors.warning
             }, {
                 label: 'Merged',
                 data: [
                     0, // Issues don't get merged
-                    metrics.fixPrs.merged,
+                    langMetrics.fixPrs.merged || 0,
                     0, // Issues don't get merged
-                    metrics.analysis.mergedPrs
+                    metrics.analysis.mergedPrs || 0
                 ],
                 backgroundColor: chartColors.success
             }]
@@ -558,8 +685,10 @@ function createAnalysisChart(metrics) {
 
 // Update production criteria
 function updateProductionCriteria(metrics) {
-    const copilotSuccessRate = metrics.fixIssues.assignedToAgent > 0 
-        ? (metrics.fixPrs.createdByAgent / metrics.fixIssues.assignedToAgent * 100) 
+    const langMetrics = getLanguageMetrics(metrics, currentLanguage);
+    
+    const copilotSuccessRate = langMetrics.fixIssues.assignedToAgent > 0 
+        ? ((langMetrics.fixPrs.createdByAgent || 0) / langMetrics.fixIssues.assignedToAgent * 100) 
         : 0;
     
     // Calculate overall workflow failure rate

@@ -330,6 +330,52 @@
             margin: 20px 0;
             color: #721c24;
         }
+
+        .language-filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            font-family: inherit;
+            font-size: 0.95em;
+        }
+
+        .language-filter-btn:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+        }
+
+        .language-filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .language-filter-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .language-filter-label {
+            font-weight: bold;
+            color: #667eea;
+            margin-right: 5px;
+        }
+
+        .language-filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
@@ -394,6 +440,26 @@
 
             <div id="overview" class="tab-content active">
                 <h2>Automated Metrics Overview</h2>
+                
+                <!-- Language Filter -->
+                <div class="language-filter-container">
+                    <span class="language-filter-label">Filter by Language:</span>
+                    <div class="language-filter-buttons">
+                        <button class="language-filter-btn active" onclick="switchLanguage('all')">
+                            All Languages
+                        </button>
+                        <button class="language-filter-btn" onclick="switchLanguage('python')">
+                            Python
+                        </button>
+                        <button class="language-filter-btn" onclick="switchLanguage('nodejs')">
+                            Node.js/TypeScript
+                        </button>
+                        <button class="language-filter-btn" onclick="switchLanguage('dotnet')">
+                            .NET/C#
+                        </button>
+                    </div>
+                </div>
+                
                 <div class="summary-stats">
                     <div class="summary-stat">
                         <div class="value" id="avg-days-to-merge">-</div>
