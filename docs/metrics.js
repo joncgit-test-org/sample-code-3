@@ -393,25 +393,7 @@ function updateTimeRangeInfo() {
     const infoElement = document.getElementById('time-range-info');
     const subtitleElement = document.getElementById('dashboard-subtitle');
     
-    let periodText = '';
-    
-    if (currentTimeRange === 'week') {
-        const weekData = allWeeksData[0];
-        if (weekData && weekData.weekOf) {
-            periodText = `Week of ${weekData.weekOf}`;
-        } else {
-            periodText = 'Last 7 days';
-        }
-    } else if (currentTimeRange === 'month') {
-        const weeksAvailable = Math.min(allWeeksData.length, 4);
-        if (weeksAvailable > 1 && allWeeksData[weeksAvailable - 1] && allWeeksData[0]) {
-            const startDate = allWeeksData[weeksAvailable - 1].weekOf || 'unknown';
-            const endDate = allWeeksData[0].weekOf || 'unknown';
-            periodText = `${weeksAvailable} weeks: ${startDate} to ${endDate}`;
-        } else {
-            periodText = `Last ${weeksAvailable * 7} days`;
-        }
-    }
+    let periodText = getTimeRangeText();
     
     if (infoElement) {
         infoElement.textContent = periodText;
@@ -420,6 +402,28 @@ function updateTimeRangeInfo() {
     if (subtitleElement) {
         subtitleElement.textContent = `Real-time metrics for SDK parity automation across Python, TypeScript, and C# (${periodText})`;
     }
+}
+
+// Get the time range text for display
+function getTimeRangeText() {
+    if (currentTimeRange === 'week') {
+        const weekData = allWeeksData[0];
+        if (weekData && weekData.weekOf) {
+            return `Week of ${weekData.weekOf}`;
+        } else {
+            return 'Last 7 days';
+        }
+    } else if (currentTimeRange === 'month') {
+        const weeksAvailable = Math.min(allWeeksData.length, 4);
+        if (weeksAvailable > 1 && allWeeksData[weeksAvailable - 1] && allWeeksData[0]) {
+            const startDate = allWeeksData[weeksAvailable - 1].weekOf || 'unknown';
+            const endDate = allWeeksData[0].weekOf || 'unknown';
+            return `${weeksAvailable} weeks: ${startDate} to ${endDate}`;
+        } else {
+            return `Last ${weeksAvailable * 7} days`;
+        }
+    }
+    return 'Last 7 days';
 }
 
 // Update dashboard with loaded metrics
@@ -701,6 +705,7 @@ function createWorkflowChart(metrics) {
     if (charts.workflow) charts.workflow.destroy();
     
     const workflows = metrics.workflows;
+    const timeRangeText = getTimeRangeText();
     
     const ctx = document.getElementById('workflowChart').getContext('2d');
     charts.workflow = new Chart(ctx, {
@@ -757,7 +762,7 @@ function createWorkflowChart(metrics) {
                 legend: { display: true, position: 'top' },
                 title: {
                     display: true,
-                    text: 'Workflow Runs Status (Last 7 Days)',
+                    text: `Workflow Runs Status (${timeRangeText})`,
                     font: { size: 16 }
                 },
                 tooltip: {
@@ -844,6 +849,7 @@ function createIssuesPrsChart(metrics) {
     if (charts.issuesPrs) charts.issuesPrs.destroy();
     
     const langMetrics = getLanguageMetrics(metrics, currentLanguage);
+    const timeRangeText = getTimeRangeText();
     
     const ctx = document.getElementById('issuesPrsChart').getContext('2d');
     charts.issuesPrs = new Chart(ctx, {
@@ -886,7 +892,7 @@ function createIssuesPrsChart(metrics) {
                 legend: { display: true, position: 'top' },
                 title: {
                     display: true,
-                    text: 'Issues & PRs Status Breakdown',
+                    text: `Issues & PRs Status Breakdown (${timeRangeText})`,
                     font: { size: 16 }
                 }
             },
@@ -907,6 +913,7 @@ function createAnalysisChart(metrics) {
     if (charts.analysis) charts.analysis.destroy();
     
     const analysis = metrics.analysis;
+    const timeRangeText = getTimeRangeText();
     
     const ctx = document.getElementById('analysisChart').getContext('2d');
     charts.analysis = new Chart(ctx, {
@@ -942,7 +949,7 @@ function createAnalysisChart(metrics) {
                 legend: { display: false },
                 title: {
                     display: true,
-                    text: 'Analysis Pipeline Time Metrics',
+                    text: `Analysis Pipeline Time Metrics (${timeRangeText})`,
                     font: { size: 16 }
                 },
                 datalabels: {

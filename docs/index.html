@@ -430,7 +430,7 @@
 
         .header-time-range {
             margin-top: 15px;
-            justify-content: center;
+            justify-content: flex-start;
         }
 
         .header-time-range .time-range-info {
@@ -507,9 +507,9 @@
             <div class="tabs">
                 <button class="tab active" onclick="showTab('overview')">Overview</button>
                 <button class="tab" onclick="showTab('workflows')">Workflows</button>
-                <button class="tab" onclick="showTab('quality')">Quality (Manual)</button>
                 <button class="tab" onclick="showTab('issues-prs')">Issues & PRs</button>
                 <button class="tab" onclick="showTab('analysis-pipeline')">Analysis Pipeline</button>
+                <button class="tab" onclick="showTab('quality')">Quality (Manual)</button>
             </div>
 
             <div id="overview" class="tab-content active">
