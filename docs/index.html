@@ -376,13 +376,64 @@
             gap: 10px;
             flex-wrap: wrap;
         }
+
+        /* Time Range Filter Styles */
+        .time-range-container {
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            background: linear-gradient(135deg, #e8f4ff 0%, #f0f8ff 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            border: 1px solid #d0e3ff;
+        }
+
+        .time-range-label {
+            font-weight: bold;
+            color: #4a7dbe;
+            margin-right: 5px;
+        }
+
+        .time-range-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .time-range-btn {
+            padding: 6px 16px;
+            border: 1px solid #4a7dbe;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            color: #4a7dbe;
+        }
+
+        .time-range-btn:hover {
+            background: #e8f4ff;
+        }
+
+        .time-range-btn.active {
+            background: #4a7dbe;
+            color: white;
+        }
+
+        .time-range-info {
+            font-size: 0.85em;
+            color: #6b7c8e;
+            font-style: italic;
+            margin-left: auto;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🤖 AI Parity Workflow Metrics Dashboard</h1>
-            <p class="subtitle">Real-time metrics for SDK parity automation across Python, TypeScript, and C# (Last 7 Days)</p>
+            <p class="subtitle" id="dashboard-subtitle">Real-time metrics for SDK parity automation across Python, TypeScript, and C#</p>
         </header>
 
         <!-- Key Volume Metrics -->
@@ -440,6 +491,20 @@
 
             <div id="overview" class="tab-content active">
                 <h2>Automated Metrics Overview</h2>
+                
+                <!-- Time Range Filter -->
+                <div class="time-range-container">
+                    <span class="time-range-label">Time Range:</span>
+                    <div class="time-range-buttons">
+                        <button class="time-range-btn active" onclick="switchTimeRange('week')">
+                            Last Week
+                        </button>
+                        <button class="time-range-btn" onclick="switchTimeRange('month')">
+                            Last Month
+                        </button>
+                    </div>
+                    <span class="time-range-info" id="time-range-info"></span>
+                </div>
                 
                 <!-- Language Filter -->
                 <div class="language-filter-container">

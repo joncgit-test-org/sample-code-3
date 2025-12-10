@@ -1,0 +1,126 @@
+{
+  "generatedAt": "2025-12-10T20:10:22Z",
+  "weekOf": "12-10-2025",
+  "evaluationPeriod": {
+    "totalDays": 7,
+    "lastWeek": 7
+  },
+  "pythonFixPrs": {
+    "total": 5,
+    "open": 2,
+    "closedNotMerged": 1,
+    "merged": 2,
+    "createdByAgent": 4,
+    "reviewRounds": 7,
+    "avgCommentsPerPr": 6.5,
+    "avgCommitsPerPr": 3.1,
+    "avgDaysToMerge": 1.8,
+    "avgOpenPrAgeDays": 2.3
+  },
+  "pythonFixIssues": {
+    "open": 3,
+    "closed": 6,
+    "assignedToAgent": 5,
+    "closedCompleted": 4,
+    "closedNotPlanned": 2,
+    "staleCount": 1,
+    "avgOpenIssueAgeDays": 4.2
+  },
+  "nodejsFixPrs": {
+    "total": 4,
+    "open": 1,
+    "closedNotMerged": 1,
+    "merged": 2,
+    "createdByAgent": 3,
+    "reviewRounds": 5,
+    "avgCommentsPerPr": 4.0,
+    "avgCommitsPerPr": 2.4,
+    "avgDaysToMerge": 2.5,
+    "avgOpenPrAgeDays": 3.0
+  },
+  "nodejsFixIssues": {
+    "open": 2,
+    "closed": 5,
+    "assignedToAgent": 4,
+    "closedCompleted": 3,
+    "closedNotPlanned": 1,
+    "staleCount": 0,
+    "avgOpenIssueAgeDays": 5.1
+  },
+  "dotnetFixPrs": {
+    "total": 6,
+    "open": 2,
+    "closedNotMerged": 1,
+    "merged": 3,
+    "createdByAgent": 5,
+    "reviewRounds": 8,
+    "avgCommentsPerPr": 7.2,
+    "avgCommitsPerPr": 3.6,
+    "avgDaysToMerge": 2.1,
+    "avgOpenPrAgeDays": 4.4
+  },
+  "dotnetFixIssues": {
+    "open": 4,
+    "closed": 7,
+    "assignedToAgent": 6,
+    "closedCompleted": 5,
+    "closedNotPlanned": 2,
+    "staleCount": 1,
+    "avgOpenIssueAgeDays": 6.3
+  },
+  "analysis": {
+    "openPrs": 3,
+    "mergedPrs": 10,
+    "closedPrs": 5,
+    "openIssues": 4,
+    "closedIssues": 9,
+    "mergedPrPercent": 55.0,
+    "closedPrPercent": 27.5,
+    "avgPrDaysToMerge": 2.2,
+    "avgIssueDaysOpenToClose": 3.7,
+    "timeSinceLastAnalysisPrDays": 0.8,
+    "timeSinceLastAnalysisIssueDays": 1.4
+  },
+  "workflows": {
+    "aiParityScan": {
+      "totalRuns": 12,
+      "success": 10,
+      "failure": 1,
+      "cancelled": 1,
+      "inProgress": 0,
+      "skipped": 0,
+      "successRate": 83.3,
+      "avgDurationSeconds": 80.0
+    },
+    "aiParityScanMerge": {
+      "totalRuns": 5,
+      "success": 4,
+      "failure": 0,
+      "cancelled": 1,
+      "inProgress": 0,
+      "skipped": 0,
+      "successRate": 80.0,
+      "avgDurationSeconds": 95.0
+    },
+    "aiParityIssueCreation": {
+      "totalRuns": 7,
+      "success": 6,
+      "failure": 0,
+      "cancelled": 1,
+      "inProgress": 0,
+      "skipped": 0,
+      "successRate": 85.7,
+      "avgDurationSeconds": 60.0
+    },
+    "aiParityMaintenanceMetrics": {
+      "totalRuns": 9,
+      "success": 4,
+      "failure": 3,
+      "cancelled": 2,
+      "inProgress": 0,
+      "skipped": 0,
+      "successRate": 44.4,
+      "avgDurationSeconds": 30.5
+    }
+  }
+}

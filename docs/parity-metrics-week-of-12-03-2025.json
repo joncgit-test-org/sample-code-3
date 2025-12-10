@@ -1,0 +1,92 @@
+{
+  "generatedAt": "2025-12-03T20:10:22Z",
+  "weekOf": "12-03-2025",
+  "evaluationPeriod": {
+    "totalDays": 7,
+    "lastWeek": 7
+  },
+  "pythonFixPrs": {
+    "total": 4,
+    "open": 1,
+    "closedNotMerged": 0,
+    "merged": 3,
+    "createdByAgent": 4,
+    "reviewRounds": 5,
+    "avgCommentsPerPr": 2.8,
+    "avgCommitsPerPr": 1.8,
+    "avgDaysToMerge": 1.2,
+    "avgOpenPrAgeDays": 1.5
+  },
+  "pythonFixIssues": {
+    "open": 6,
+    "closed": 4,
+    "assignedToAgent": 5,
+    "closedCompleted": 3,
+    "closedNotPlanned": 1,
+    "staleCount": 0,
+    "avgOpenIssueAgeDays": 3.8
+  },
+  "nodejsFixPrs": {
+    "total": 3,
+    "open": 0,
+    "closedNotMerged": 1,
+    "merged": 2,
+    "createdByAgent": 3,
+    "reviewRounds": 3,
+    "avgCommentsPerPr": 2.0,
+    "avgCommitsPerPr": 1.2,
+    "avgDaysToMerge": 0.8,
+    "avgOpenPrAgeDays": 0
+  },
+  "nodejsFixIssues": {
+    "open": 4,
+    "closed": 3,
+    "assignedToAgent": 3,
+    "closedCompleted": 2,
+    "closedNotPlanned": 1,
+    "staleCount": 1,
+    "avgOpenIssueAgeDays": 2.5
+  },
+  "dotnetFixPrs": {
+    "total": 5,
+    "open": 1,
+    "closedNotMerged": 0,
+    "merged": 4,
+    "createdByAgent": 5,
+    "reviewRounds": 7,
+    "avgCommentsPerPr": 3.5,
+    "avgCommitsPerPr": 2.2,
+    "avgDaysToMerge": 1.6,
+    "avgOpenPrAgeDays": 2.0
+  },
+  "dotnetFixIssues": {
+    "open": 5,
+    "closed": 3,
+    "assignedToAgent": 4,
+    "closedCompleted": 2,
+    "closedNotPlanned": 1,
+    "staleCount": 1,
+    "avgOpenIssueAgeDays": 4.2
+  },
+  "workflows": {
+    "totalRuns": 52,
+    "successfulRuns": 45,
+    "failedRuns": 7,
+    "successRate": 86.5,
+    "avgDurationSeconds": 118,
+    "avgDurationFormatted": "1m 58s"
+  },
+  "analysis": {
+    "openPrs": 2,
+    "mergedPrs": 4,
+    "closedPrs": 2,
+    "openIssues": 3,
+    "closedIssues": 3,
+    "mergedPrPercent": 50.0,
+    "closedPrPercent": 25.0,
+    "avgPrDaysToMerge": 1.5,
+    "avgIssueDaysOpenToClose": 2.8,
+    "timeSinceLastAnalysisPrDays": 2,
+    "timeSinceLastAnalysisIssueDays": 1
+  }
+}

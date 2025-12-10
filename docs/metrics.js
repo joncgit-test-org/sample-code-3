@@ -22,7 +22,9 @@ const chartColors = {
 
 let charts = {};
 let metricsData = null;
+let allWeeksData = []; // Store all loaded weekly data
 let currentLanguage = 'all'; // Track currently selected language
+let currentTimeRange = 'week'; // Track time range: 'week' or 'month'
 
 // Manual metrics data (to be updated based on evaluations)
 const manualMetrics = {
@@ -136,26 +138,296 @@ function getLanguageMetrics(metrics, language) {
 // Load metrics from parity-metrics-latest.json
 async function loadMetrics() {
     try {
+        // First, try to load the latest metrics file
         let response = await fetch('parity-metrics-latest.json');
         if (!response.ok) {
-            console.warn('⚠️ parity-metrics-latest.json not found, trying dummy-metrics.json...');
-            response = await fetch('dummy-metrics.json');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         metricsData = await response.json();
-        console.log('✅ Metrics loaded successfully');
-        updateDashboard(metricsData);
+        allWeeksData = [metricsData]; // Start with the latest week
+        
+        console.log('✅ Latest metrics loaded successfully');
+        
+        // Try to load additional weeks for monthly view
+        await loadAdditionalWeeks();
+        
+        updateDashboard(getActiveMetrics());
     } catch (error) {
         console.error('❌ Error loading metrics:', error);
         showError('Failed to load metrics data. Please ensure the metrics JSON file is accessible.');
     }
 }
 
+// Generate week date strings for the past N weeks
+function getWeekDates(numWeeks) {
+    const dates = [];
+    const today = new Date();
+    
+    for (let i = 0; i < numWeeks; i++) {
+        const weekDate = new Date(today);
+        weekDate.setDate(today.getDate() - (i * 7));
+        
+        const month = String(weekDate.getMonth() + 1).padStart(2, '0');
+        const day = String(weekDate.getDate()).padStart(2, '0');
+        const year = weekDate.getFullYear();
+        
+        dates.push(`${month}-${day}-${year}`);
+    }
+    
+    return dates;
+}
+
+// Load additional weeks for monthly aggregation
+async function loadAdditionalWeeks() {
+    const weekDates = getWeekDates(4); // Load up to 4 weeks for a full month
+    const loadedWeeks = new Set();
+    
+    // Mark the already loaded week
+    if (metricsData && metricsData.weekOf) {
+        loadedWeeks.add(metricsData.weekOf);
+    }
+    
+    for (const weekDate of weekDates) {
+        if (loadedWeeks.has(weekDate)) continue;
+        
+        try {
+            const filename = `parity-metrics-week-of-${weekDate}.json`;
+            const response = await fetch(filename);
+            
+            if (response.ok) {
+                const weekData = await response.json();
+                allWeeksData.push(weekData);
+                loadedWeeks.add(weekDate);
+                console.log(`✅ Loaded metrics for week of ${weekDate}`);
+            }
+        } catch (error) {
+            // Silently skip weeks that don't exist
+            console.log(`ℹ️ No metrics found for week of ${weekDate}`);
+        }
+    }
+    
+    // Sort weeks by date (newest first)
+    allWeeksData.sort((a, b) => {
+        const dateA = a.generatedAt ? new Date(a.generatedAt) : new Date(0);
+        const dateB = b.generatedAt ? new Date(b.generatedAt) : new Date(0);
+        return dateB - dateA;
+    });
+    
+    console.log(`📊 Total weeks loaded: ${allWeeksData.length}`);
+}
+
+// Aggregate metrics across multiple weeks
+function aggregateWeeksData(weeksData) {
+    if (!weeksData || weeksData.length === 0) {
+        return null;
+    }
+    
+    if (weeksData.length === 1) {
+        return weeksData[0];
+    }
+    
+    const languages = ['python', 'nodejs', 'dotnet'];
+    const aggregated = {
+        generatedAt: weeksData[0].generatedAt,
+        weekOf: `${weeksData[weeksData.length - 1].weekOf || 'unknown'} to ${weeksData[0].weekOf || 'unknown'}`,
+        evaluationPeriod: {
+            totalDays: weeksData.length * 7,
+            weeksIncluded: weeksData.length
+        }
+    };
+    
+    // Aggregate language-specific metrics
+    languages.forEach(lang => {
+        const prKey = `${lang}FixPrs`;
+        const issueKey = `${lang}FixIssues`;
+        
+        aggregated[prKey] = {
+            total: 0,
+            open: 0,
+            closedNotMerged: 0,
+            merged: 0,
+            createdByAgent: 0,
+            reviewRounds: 0,
+            avgCommentsPerPr: 0,
+            avgCommitsPerPr: 0,
+            avgDaysToMerge: 0,
+            avgOpenPrAgeDays: 0
+        };
+        
+        aggregated[issueKey] = {
+            open: 0,
+            closed: 0,
+            assignedToAgent: 0,
+            closedCompleted: 0,
+            closedNotPlanned: 0,
+            staleCount: 0,
+            avgOpenIssueAgeDays: 0
+        };
+        
+        let totalMerged = 0;
+        let sumAvgDays = 0;
+        let sumAvgComments = 0;
+        let sumAvgCommits = 0;
+        
+        weeksData.forEach(week => {
+            if (week[prKey]) {
+                aggregated[prKey].total += week[prKey].total || 0;
+                aggregated[prKey].open += week[prKey].open || 0;
+                aggregated[prKey].closedNotMerged += week[prKey].closedNotMerged || 0;
+                aggregated[prKey].merged += week[prKey].merged || 0;
+                aggregated[prKey].createdByAgent += week[prKey].createdByAgent || 0;
+                aggregated[prKey].reviewRounds += week[prKey].reviewRounds || 0;
+                
+                if (week[prKey].merged > 0) {
+                    totalMerged += week[prKey].merged;
+                    sumAvgDays += (week[prKey].avgDaysToMerge || 0) * week[prKey].merged;
+                    sumAvgComments += (week[prKey].avgCommentsPerPr || 0) * week[prKey].merged;
+                    sumAvgCommits += (week[prKey].avgCommitsPerPr || 0) * week[prKey].merged;
+                }
+            }
+            
+            if (week[issueKey]) {
+                aggregated[issueKey].open += week[issueKey].open || 0;
+                aggregated[issueKey].closed += week[issueKey].closed || 0;
+                aggregated[issueKey].assignedToAgent += week[issueKey].assignedToAgent || 0;
+                aggregated[issueKey].closedCompleted += week[issueKey].closedCompleted || 0;
+                aggregated[issueKey].closedNotPlanned += week[issueKey].closedNotPlanned || 0;
+                aggregated[issueKey].staleCount += week[issueKey].staleCount || 0;
+            }
+        });
+        
+        // Calculate weighted averages
+        if (totalMerged > 0) {
+            aggregated[prKey].avgDaysToMerge = sumAvgDays / totalMerged;
+            aggregated[prKey].avgCommentsPerPr = sumAvgComments / totalMerged;
+            aggregated[prKey].avgCommitsPerPr = sumAvgCommits / totalMerged;
+        }
+    });
+    
+    // Aggregate analysis metrics
+    aggregated.analysis = {
+        openPrs: 0,
+        mergedPrs: 0,
+        closedPrs: 0,
+        openIssues: 0,
+        closedIssues: 0,
+        mergedPrPercent: 0,
+        closedPrPercent: 0,
+        avgPrDaysToMerge: 0,
+        avgIssueDaysOpenToClose: 0,
+        timeSinceLastAnalysisPrDays: 0,
+        timeSinceLastAnalysisIssueDays: 0
+    };
+    
+    let analysisTotalMerged = 0;
+    let analysisSumAvgDays = 0;
+    
+    weeksData.forEach(week => {
+        if (week.analysis) {
+            aggregated.analysis.openPrs += week.analysis.openPrs || 0;
+            aggregated.analysis.mergedPrs += week.analysis.mergedPrs || 0;
+            aggregated.analysis.closedPrs += week.analysis.closedPrs || 0;
+            aggregated.analysis.openIssues += week.analysis.openIssues || 0;
+            aggregated.analysis.closedIssues += week.analysis.closedIssues || 0;
+            
+            if (week.analysis.mergedPrs > 0) {
+                analysisTotalMerged += week.analysis.mergedPrs;
+                analysisSumAvgDays += (week.analysis.avgPrDaysToMerge || 0) * week.analysis.mergedPrs;
+            }
+        }
+    });
+    
+    // Calculate analysis percentages
+    const totalAnalysisPrs = aggregated.analysis.openPrs + aggregated.analysis.mergedPrs + aggregated.analysis.closedPrs;
+    if (totalAnalysisPrs > 0) {
+        aggregated.analysis.mergedPrPercent = (aggregated.analysis.mergedPrs / totalAnalysisPrs) * 100;
+        aggregated.analysis.closedPrPercent = (aggregated.analysis.closedPrs / totalAnalysisPrs) * 100;
+    }
+    if (analysisTotalMerged > 0) {
+        aggregated.analysis.avgPrDaysToMerge = analysisSumAvgDays / analysisTotalMerged;
+    }
+    
+    // Use the most recent week's workflow data (workflows are already cumulative/recent)
+    aggregated.workflows = weeksData[0].workflows || {};
+    
+    // Use the most recent timeSince values
+    if (weeksData[0].analysis) {
+        aggregated.analysis.timeSinceLastAnalysisPrDays = weeksData[0].analysis.timeSinceLastAnalysisPrDays || 0;
+        aggregated.analysis.timeSinceLastAnalysisIssueDays = weeksData[0].analysis.timeSinceLastAnalysisIssueDays || 0;
+    }
+    
+    return aggregated;
+}
+
+// Get active metrics based on time range selection
+function getActiveMetrics() {
+    if (currentTimeRange === 'week') {
+        return allWeeksData[0] || metricsData;
+    } else if (currentTimeRange === 'month') {
+        // Get last 4 weeks (approximately one month)
+        const monthData = allWeeksData.slice(0, 4);
+        return aggregateWeeksData(monthData);
+    }
+    return metricsData;
+}
+
+// Switch time range
+function switchTimeRange(range) {
+    currentTimeRange = range;
+    
+    // Update button states
+    document.querySelectorAll('.time-range-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Update time range info
+    updateTimeRangeInfo();
+    
+    // Refresh dashboard with new time range
+    updateDashboard(getActiveMetrics());
+}
+
+// Update the time range info display
+function updateTimeRangeInfo() {
+    const infoElement = document.getElementById('time-range-info');
+    const subtitleElement = document.getElementById('dashboard-subtitle');
+    
+    let periodText = '';
+    
+    if (currentTimeRange === 'week') {
+        const weekData = allWeeksData[0];
+        if (weekData && weekData.weekOf) {
+            periodText = `Week of ${weekData.weekOf}`;
+        } else {
+            periodText = 'Last 7 days';
+        }
+    } else if (currentTimeRange === 'month') {
+        const weeksAvailable = Math.min(allWeeksData.length, 4);
+        if (weeksAvailable > 1 && allWeeksData[weeksAvailable - 1] && allWeeksData[0]) {
+            const startDate = allWeeksData[weeksAvailable - 1].weekOf || 'unknown';
+            const endDate = allWeeksData[0].weekOf || 'unknown';
+            periodText = `${weeksAvailable} weeks: ${startDate} to ${endDate}`;
+        } else {
+            periodText = `Last ${weeksAvailable * 7} days`;
+        }
+    }
+    
+    if (infoElement) {
+        infoElement.textContent = periodText;
+    }
+    
+    if (subtitleElement) {
+        subtitleElement.textContent = `Real-time metrics for SDK parity automation across Python, TypeScript, and C# (${periodText})`;
+    }
+}
+
 // Update dashboard with loaded metrics
 function updateDashboard(metrics) {
     console.log('📊 Updating dashboard...');
+    
+    // Update time range info
+    updateTimeRangeInfo();
     
     // Update volume metrics
     updateVolumeMetrics(metrics);
@@ -744,7 +1016,13 @@ function updateFooter(metrics) {
         timeZoneName: 'short'
     });
     
-    document.getElementById('last-updated').textContent = formatted;
+    // Add time range context to footer
+    let timeRangeText = '';
+    if (currentTimeRange === 'month' && metrics.evaluationPeriod) {
+        timeRangeText = ` (${metrics.evaluationPeriod.weeksIncluded} weeks aggregated)`;
+    }
+    
+    document.getElementById('last-updated').textContent = formatted + timeRangeText;
     document.getElementById('last-updated').classList.remove('loading');
 }
 
